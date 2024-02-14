@@ -139,7 +139,7 @@ async def login(username: str, password: str, db: Session = Depends(get_db)):
 @app.post("/signup/")
 async def signup(username: str, email: str, password: str, db: Session = Depends(get_db)):
     # Check if the username already exists
-    if db.query(User).filter(User.username == username).first():
+    if db.query(LogUser).filter(LogUser.username == username).first():
         raise HTTPException(status_code=400, detail="Username already registered")
     # Hash the password
     hashed_password = pwd_context.hash(password)
@@ -160,7 +160,9 @@ async def get_all_log_entries(db: Session = Depends(get_db)):
 # http://127.0.0.1:8000/log/
 @app.get("/log/{username}")
 async def get_log_entries_by_username(username: str, db: Session = Depends(get_db)):
-    log_entries = db.query(Log).all()
+    log_entries = db.query(Log).filter(Log.username == username).all()
+    if not log_entries:
+        raise HTTPException(status_code=404, detail="User's log entries not found")
     return log_entries
 
 # Route to retrieve log entries by request body value
