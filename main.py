@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, Depends
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, cast, select,  URL
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, cast, select,  URL, insert, Identity
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime, timedelta
@@ -7,6 +7,7 @@ from jose import jwt, JWTError
 from passlib.context import CryptContext
 from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 
 # SQLAlchemy Database Configuration
@@ -19,8 +20,6 @@ engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
-# Create the table
-Base.metadata.create_all(bind=engine)
 
 class Log(Base):
     __tablename__ = "log"
@@ -54,10 +53,13 @@ class UsersLog(Base):
 class LogUser(Base):
     __tablename__ = "log_users"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True)
     username = Column(String)
     password = Column(String)
     email = Column(String)
+
+# Create the table
+Base.metadata.create_all(bind=engine)
 
 # Dependency to get the database session
 def get_db():
@@ -126,40 +128,56 @@ def verify_token(token: str):
         raise HTTPException(status_code=401, detail="Invalid authentication token")
 
 # Route to authenticate user and generate JWT token
+
+class LoginData(BaseModel):
+    username: str
+    password: str
+
+# Login handler returns bearer token like
+# {    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJleGFtcGxlX3VzZXIiLCJleHAiOjE3MDc5MTIyMDJ9.v1SyyUd0BOJl5Hnvx7KJXDITrklVnxoFitZJerT0S-A",
+#     "token_type": "bearer" }
 @app.post("/login/")
-async def login(username: str, password: str, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == username).first()
-    if not user or not verify_password(password, user.password_hash):
+async def login(data: LoginData, db: Session = Depends(get_db)):
+    user = db.query(LogUser).filter(LogUser.username == data.username).first()
+    print(user)
+    if not user or not pwd_context.verify(data.password, user.password):
         raise HTTPException(status_code=401, detail="Incorrect username or password")
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
     return {"access_token": access_token, "token_type": "bearer"}
 
-# Route to register a new user
+class SignUpData(BaseModel):
+    username: str
+    email: str
+    password: str
+
 @app.post("/signup/")
-async def signup(username: str, email: str, password: str, db: Session = Depends(get_db)):
+async def signup(data: SignUpData, db: Session = Depends(get_db)):
     # Check if the username already exists
-    if db.query(LogUser).filter(LogUser.username == username).first():
+    if db.query(LogUser).filter(LogUser.username == data.username).first():
         raise HTTPException(status_code=400, detail="Username already registered")
     # Hash the password
-    hashed_password = pwd_context.hash(password)
-    # Create the new user
-    new_user = User(username=username, email=email, password_hash=hashed_password)
-    db.add(new_user)
+    hashed_password = pwd_context.hash(data.password)
+    # Define the insert statement
+    insert_stmt = insert(LogUser).values(username=data.username, email=data.email, password=hashed_password)
+    # Execute the insert statement
+    db.execute(insert_stmt)
+    # Commit the transaction
     db.commit()
     return {"message": "User registered successfully"}
 
 
+
 # Route to retrieve all log entries
 @app.get("/log/")
-async def get_all_log_entries(db: Session = Depends(get_db)):
+async def get_all_log_entries(current_user: str = Depends(get_current_user),db: Session = Depends(get_db)):
     log_entries=db.query(Log).all()
     return log_entries
 
 # Route to retrieve log entries by username
 # http://127.0.0.1:8000/log/
 @app.get("/log/{username}")
-async def get_log_entries_by_username(username: str, db: Session = Depends(get_db)):
+async def get_log_entries_by_username(username: str,current_user: str = Depends(get_current_user), db: Session = Depends(get_db)):
     log_entries = db.query(Log).filter(Log.username == username).all()
     if not log_entries:
         raise HTTPException(status_code=404, detail="User's log entries not found")
@@ -168,7 +186,7 @@ async def get_log_entries_by_username(username: str, db: Session = Depends(get_d
 # Route to retrieve log entries by request body value
 # http://127.0.0.1:8000/log/search/?value=040525651055,http://127.0.0.1:8000/log/search/?value=бегенов
 @app.get("/log/search/")
-async def search_log_entries_by_request_body_value(value: str, db: Session = Depends(get_db)):
+async def search_log_entries_by_request_body_value(value: str,current_user: str = Depends(get_current_user), db: Session = Depends(get_db)):
     # log_entries = db.query(Log).filter(cast(Log.request_body, String).contains(value)).all()
     log_entries = db.query(Log).filter(cast(Log.request_body, String).contains(value)).all()
     if not log_entries:
@@ -180,7 +198,7 @@ async def search_log_entries_by_request_body_value(value: str, db: Session = Dep
 # Route to retrieve log entries by username from "users_log" table
 # http://127.0.0.1:8000/users_log/savasava
 @app.get("/users_log/{username}")
-async def get_users_log_entries_by_username(username: str, db: Session = Depends(get_db)):
+async def get_users_log_entries_by_username(username: str,current_user: str = Depends(get_current_user), db: Session = Depends(get_db)):
     log_entries = db.query(UsersLog).filter(UsersLog.username == username).all()
     if not log_entries:
         raise HTTPException(status_code=404, detail="User's log entries not found")
@@ -189,7 +207,7 @@ async def get_users_log_entries_by_username(username: str, db: Session = Depends
 # Route to search log entries by message from "users_log" table
 #http://127.0.0.1:8000/users_log/search/?message=180
 @app.get("/users_log/search/")
-async def search_users_log_entries_by_message(message: str, db: Session = Depends(get_db)):
+async def search_users_log_entries_by_message(message: str,current_user: str = Depends(get_current_user), db: Session = Depends(get_db)):
     log_entries = db.query(UsersLog).filter(UsersLog.message.contains(message)).all()
     if not log_entries:
         raise HTTPException(status_code=404, detail="Log entries not found")
