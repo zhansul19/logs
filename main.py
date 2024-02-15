@@ -1,5 +1,5 @@
-from fastapi import FastAPI, HTTPException, Depends
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, cast, select,  URL, insert, Identity
+from fastapi import FastAPI, HTTPException, Depends,Response
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, cast, select,  URL, insert
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime, timedelta
@@ -8,7 +8,8 @@ from passlib.context import CryptContext
 from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-
+import pandas as pd
+from fastapi.security import OAuth2PasswordBearer
 
 # SQLAlchemy Database Configuration
 DATABASE_URL = "postgresql://root:password@localhost:5433/simple_bank"
@@ -89,7 +90,6 @@ SECRET_KEY = "your_secret_key"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-
 # Password Hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -109,7 +109,6 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 # Dependency to get the current user from JWT token
-from fastapi.security import OAuth2PasswordBearer
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login/")
 
@@ -132,9 +131,13 @@ def verify_token(token: str):
 class LoginData(BaseModel):
     username: str
     password: str
-
+    
+# { body
+#   "username": "example_user",
+#   "password": "password123"
+# }
 # Login handler returns bearer token like
-# {    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJleGFtcGxlX3VzZXIiLCJleHAiOjE3MDc5MTIyMDJ9.v1SyyUd0BOJl5Hnvx7KJXDITrklVnxoFitZJerT0S-A",
+# {    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cC...",
 #     "token_type": "bearer" }
 @app.post("/login/")
 async def login(data: LoginData, db: Session = Depends(get_db)):
@@ -150,6 +153,13 @@ class SignUpData(BaseModel):
     username: str
     email: str
     password: str
+
+
+# {
+#   "username": "example_user",
+#   "email": "user@example.com",
+#   "password": "password123"
+# }
 
 @app.post("/signup/")
 async def signup(data: SignUpData, db: Session = Depends(get_db)):
@@ -170,29 +180,52 @@ async def signup(data: SignUpData, db: Session = Depends(get_db)):
 
 # Route to retrieve all log entries
 @app.get("/log/")
-async def get_all_log_entries(current_user: str = Depends(get_current_user),db: Session = Depends(get_db)):
-    log_entries=db.query(Log).all()
-    return log_entries
+async def get_all_log_entries(current_user: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    log_entries = db.query(Log.username, User.email,Log.request_body,Log.request_rels,Log.date,Log.approvement_data,Log.obwii,Log.depth_,Log.limit_).join(User,Log.username == User.username).all()
+    log_entries_as_dict = [
+        dict(
+            username=row[0], email=row[1], request_body=row[2], request_rels=row[3],
+            date=row[4], approvement_data=row[5], obwii=row[6], depth_=row[7], limit_=row[8]
+        )
+        for row in log_entries
+    ]
+
+    return log_entries_as_dict
 
 # Route to retrieve log entries by username
 # http://127.0.0.1:8000/log/
 @app.get("/log/{username}")
-async def get_log_entries_by_username(username: str,current_user: str = Depends(get_current_user), db: Session = Depends(get_db)):
-    log_entries = db.query(Log).filter(Log.username == username).all()
-    if not log_entries:
+async def get_log_entries_by_username(username: str, current_user: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    log_entries = db.query(Log.username, User.email,Log.request_body,Log.request_rels,Log.date,Log.approvement_data,Log.obwii,Log.depth_,Log.limit_).join(User,Log.username == User.username).filter(Log.username == username).all()
+
+    log_entries_as_dict = [
+        dict(
+            username=row[0], email=row[1], request_body=row[2], request_rels=row[3],
+            date=row[4], approvement_data=row[5], obwii=row[6], depth_=row[7], limit_=row[8]
+        )
+        for row in log_entries
+    ]
+
+    if not log_entries_as_dict:
         raise HTTPException(status_code=404, detail="User's log entries not found")
-    return log_entries
+    return log_entries_as_dict
 
 # Route to retrieve log entries by request body value
 # http://127.0.0.1:8000/log/search/?value=040525651055,http://127.0.0.1:8000/log/search/?value=бегенов
 @app.get("/log/search/")
 async def search_log_entries_by_request_body_value(value: str,current_user: str = Depends(get_current_user), db: Session = Depends(get_db)):
-    # log_entries = db.query(Log).filter(cast(Log.request_body, String).contains(value)).all()
-    log_entries = db.query(Log).filter(cast(Log.request_body, String).contains(value)).all()
-    if not log_entries:
-        raise HTTPException(status_code=404, detail="Log entries not found")
-    return log_entries
+    log_entries = db.query(Log.username, User.email,Log.request_body,Log.request_rels,Log.date,Log.approvement_data,Log.obwii,Log.depth_,Log.limit_).join(User,Log.username == User.username).filter(cast(Log.request_body, String).contains(value)).all()
+    log_entries_as_dict = [
+        dict(
+            username=row[0], email=row[1], request_body=row[2], request_rels=row[3],
+            date=row[4], approvement_data=row[5], obwii=row[6], depth_=row[7], limit_=row[8]
+        )
+        for row in log_entries
+    ]
 
+    if not log_entries_as_dict:
+        raise HTTPException(status_code=404, detail="User's log entries not found")
+    return log_entries_as_dict
 
 
 # Route to retrieve log entries by username from "users_log" table
@@ -212,16 +245,46 @@ async def search_users_log_entries_by_message(message: str,current_user: str = D
     if not log_entries:
         raise HTTPException(status_code=404, detail="Log entries not found")
     return log_entries
+@app.get("/download_excel")
+async def download_excel(current_user: str = Depends(get_current_user)):
+    json_data={
+        "username": "example_user",
+        "password": "password123"
+    }
+    # Convert JSON data to pandas DataFrame
+    try:
+        if isinstance(json_data, dict):
+            # If JSON data is a dictionary, transform it into a list of dictionaries
+            json_data = [json_data]
+        df = pd.DataFrame(json_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to convert JSON to DataFrame: {e}")
 
+    # Save DataFrame as Excel file
+    try:
+        excel_filename = "data.xlsx"
+        df.to_excel(excel_filename, index=False)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save DataFrame to Excel: {e}")
 
+    # Read the Excel file
+    try:
+        with open(excel_filename, "rb") as file:
+            content = file.read()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to read Excel file: {e}")
+
+    # Return the Excel file as a downloadable response
+    return Response(content, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": "attachment;filename=data.xlsx"})
 #
 # # SQLAlchemy Database Configuration
 # DATABASE_URL2 = URL.create(
 #         "postgresql",
-#         username="erdr_reader_kfm_db",
-#         password="YrS$p1HUM@s2",
-#         host="192.168.122.5",
-#         database= "kfm_new"
+#         username="",
+#         password="",
+#         host="",
+#         database= ""
 #     )
 #
 # # Create SQLAlchemy Engine
