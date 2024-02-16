@@ -12,7 +12,7 @@ import pandas as pd
 from fastapi.security import OAuth2PasswordBearer
 
 # SQLAlchemy Database Configuration
-DATABASE_URL = "postgresql://root:password@localhost:5433/simple_bank"
+DATABASE_URL = "postgresql:/"
 
 # Create SQLAlchemy Engine
 engine = create_engine(DATABASE_URL)
@@ -131,7 +131,7 @@ def verify_token(token: str):
 class LoginData(BaseModel):
     username: str
     password: str
-    
+
 # { body
 #   "username": "example_user",
 #   "password": "password123"
@@ -240,11 +240,12 @@ async def get_users_log_entries_by_username(username: str,current_user: str = De
 # Route to search log entries by message from "users_log" table
 #http://127.0.0.1:8000/users_log/search/?message=180
 @app.get("/users_log/search/")
-async def search_users_log_entries_by_message(message: str,current_user: str = Depends(get_current_user), db: Session = Depends(get_db)):
+async def search_users_log_entries_by_message(message: str, current_user: str = Depends(get_current_user), db: Session = Depends(get_db)):
     log_entries = db.query(UsersLog).filter(UsersLog.message.contains(message)).all()
     if not log_entries:
         raise HTTPException(status_code=404, detail="Log entries not found")
     return log_entries
+
 @app.get("/download_excel")
 async def download_excel(current_user: str = Depends(get_current_user)):
     json_data={
@@ -277,52 +278,52 @@ async def download_excel(current_user: str = Depends(get_current_user)):
     # Return the Excel file as a downloadable response
     return Response(content, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     headers={"Content-Disposition": "attachment;filename=data.xlsx"})
-#
-# # SQLAlchemy Database Configuration
-# DATABASE_URL2 = URL.create(
-#         "postgresql",
-#         username="",
-#         password="",
-#         host="",
-#         database= ""
-#     )
-#
-# # Create SQLAlchemy Engine
-# engine2 = create_engine(DATABASE_URL2)
-#
-# # Create a sessionmaker
-# SessionLocal2 = sessionmaker(autocommit=False, autoflush=False, bind=engine2)
-#
-# # Dependency to get the database session
-# def get_db2():
-#     db = SessionLocal2()
-#     try:
-#         yield db
-#     finally:
-#         db.close()
-#
-# class DossieLog(Base):
-#     __tablename__ = "logs"
-#
-#     id = Column(Integer, primary_key=True, index=True)
-#     user_name = Column(String)
-#     fname = Column(Integer)
-#     lname = Column(Integer)
-#     mname = Column(Integer)
-#     action = Column(String)
-# # Route to retrieve log entries by username from "users_log" table
-# @app.get("/dossie_log/{user_name}")
-# async def get_dossie_log_entries_by_username(user_name: str, db: Session = Depends(get_db2)):
-#     log_entries = db.query(DossieLog).filter(DossieLog.user_name == user_name).all()
-#     if not log_entries:
-#         raise HTTPException(status_code=404, detail="User's log entries not found")
-#     return log_entries
-#
-# # Route to search log entries by message from "users_log" table
-# # http://127.0.0.1:8000/dossie_log/search/?action=150540008706
-# @app.get("/dossie_log/search/")
-# async def search_dossie_log_entries_by_cation(action: str, db: Session = Depends(get_db2)):
-#     log_entries = db.query(DossieLog).filter(DossieLog.action.like(f'%{action}%')).all()
-#     if not log_entries:
-#         raise HTTPException(status_code=404, detail="Log entries not found")
-#     return log_entries
+
+# SQLAlchemy Database Configuration
+DATABASE_URL2 = URL.create(
+        "postgresql",
+        username="",
+        password="",
+        host="",
+        database= ""
+    )
+
+# Create SQLAlchemy Engine
+engine2 = create_engine(DATABASE_URL2)
+
+# Create a sessionmaker
+SessionLocal2 = sessionmaker(autocommit=False, autoflush=False, bind=engine2)
+
+# Dependency to get the database session
+def get_db2():
+    db = SessionLocal2()
+    try:
+        yield db
+    finally:
+        db.close()
+
+class DossieLog(Base):
+    __tablename__ = "logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_name = Column(String)
+    fname = Column(Integer)
+    lname = Column(Integer)
+    mname = Column(Integer)
+    action = Column(String)
+# Route to retrieve log entries by username from "users_log" table
+@app.get("/dossie_log/{user_name}")
+async def get_dossie_log_entries_by_username(user_name: str, current_user: str = Depends(get_current_user), db: Session = Depends(get_db2)):
+    log_entries = db.query(DossieLog).filter(DossieLog.user_name == user_name).all()
+    if not log_entries:
+        raise HTTPException(status_code=404, detail="User's log entries not found")
+    return log_entries
+
+# Route to search log entries by message from "users_log" table
+# http://127.0.0.1:8000/dossie_log/search/?action=150540008706
+@app.get("/dossie_log/search/")
+async def search_dossie_log_entries_by_cation(action: str, current_user: str = Depends(get_current_user), db: Session = Depends(get_db2)):
+    log_entries = db.query(DossieLog).filter(DossieLog.action.like(f'%{action}%')).all()
+    if not log_entries:
+        raise HTTPException(status_code=404, detail="Log entries not found")
+    return log_entries
