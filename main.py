@@ -8,20 +8,25 @@ from passlib.context import CryptContext
 from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import pandas as pd
 from fastapi.security import OAuth2PasswordBearer
+from enum import Enum
 
 # SQLAlchemy Database Configuration
-DATABASE_URL = "postgresql:/"
+database_url=URL.create("postgresql",username="postgres",password="123",host="192.168.122.121",database="amigo")
 
 # Create SQLAlchemy Engine
-engine = create_engine(DATABASE_URL)
+engine = create_engine(database_url)
 
 # Create a sessionmaker
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
+class TagName(str, Enum):
+    fullname = "fullname"
+    username = "username"
+    iin = "iin"
+    
 class Log(Base):
     __tablename__ = "log"
 
@@ -44,7 +49,7 @@ class User(Base):
 
 # Define SQLAlchemy Model for the "users_log" table
 class UsersLog(Base):
-    __tablename__ = "users_log"
+    __tablename__ = "users_log_cascade"
 
     time = Column(Integer, primary_key=True, index=True)
     username = Column(String)
@@ -75,7 +80,7 @@ app = FastAPI()
 
 # CORS settings
 origins = [
-    "http://localhost:3000",
+    "http://localhost:3001",
 ]
 # Add CORS middleware to allow requests from specified origins
 app.add_middleware(
@@ -327,3 +332,61 @@ async def search_dossie_log_entries_by_cation(action: str, current_user: str = D
     if not log_entries:
         raise HTTPException(status_code=404, detail="Log entries not found")
     return log_entries
+
+@app.get("/log/{tagname}={value}")
+async def get_users_log_entries_by_tagname_value(tagname: TagName, value: str, current_user: str = Depends(get_current_user), db: Session = Depends(get_db)):
+
+    if tagname.value == "fullname":
+        log_entries = db.query(Log.username, User.email,Log.request_body,Log.request_rels,Log.date,Log.approvement_data,Log.obwii,Log.depth_,Log.limit_).join(User,Log.username == User.username).filter(cast(User.email, String).contains(value)).all()
+    elif tagname.value == "username":
+        log_entries = db.query(Log.username, User.email,Log.request_body,Log.request_rels,Log.date,Log.approvement_data,Log.obwii,Log.depth_,Log.limit_).join(User,Log.username == User.username).filter(cast(User.username, String).contains(value)).all()
+    else: 
+        raise HTTPException(status_code=404, detail="Bad Request")
+
+    log_entries_as_dict = [
+        dict(
+            username=row[0], email=row[1], request_body=row[2], request_rels=row[3],
+            date=row[4], approvement_data=row[5], obwii=row[6], depth_=row[7], limit_=row[8]
+        )
+        for row in log_entries
+    ]
+
+    if not log_entries_as_dict:
+        raise HTTPException(status_code=404, detail="User's log entries not found")
+    return log_entries_as_dict
+
+
+@app.get("/log/{tagname}={value}/download_excel")
+async def download_excel(tagname: str, value: str, current_user: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    if tagname == "fullname":
+        log_entries = db.query(Log.username, User.email,Log.request_body,Log.request_rels,Log.date,Log.approvement_data,Log.obwii,Log.depth_,Log.limit_).join(User,Log.username == User.username).filter(cast(User.email, String).contains(value)).all()
+    elif tagname == "username":
+        log_entries = db.query(Log.username, User.email,Log.request_body,Log.request_rels,Log.date,Log.approvement_data,Log.obwii,Log.depth_,Log.limit_).join(User,Log.username == User.username).filter(cast(User.username, String).contains(value)).all()
+    elif tagname == "iin":
+        #log_entries = db.query(Log.username, User.email,Log.request_body,Log.request_rels,Log.date,Log.approvement_data,Log.obwii,Log.depth_,Log.limit_).join(User,Log.username == User.username).filter(cast(User.iin, String).contains(value)).all()
+        print()
+    else:
+        raise HTTPException(status_code=404, detail=f"Bad Request")
+    
+    log_entries_as_dict = [
+            dict(
+                username=row[0], email=row[1], request_body=row[2], request_rels=row[3],
+                date=row[4], approvement_data=row[5], obwii=row[6], depth_=row[7], limit_=row[8]
+            )
+            for row in log_entries
+        ]
+    
+    for entry in log_entries_as_dict:
+        entry['date'] = entry['date'].strftime('%Y-%m-%d %H:%M:%S')
+
+    try:
+        df = pd.DataFrame(log_entries_as_dict)
+        excel_filename = "data.xlsx"
+        df.to_excel(excel_filename, index=False)
+        with open(excel_filename, "rb") as file:
+            content = file.read()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to read Excel file: {e}")
+    
+    return Response(content, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": "attachment;filename=data.xlsx"})
