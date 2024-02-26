@@ -3,7 +3,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 
-DATABASE_URL = "postgresql://root:password@localhost:5433/simple_bank"
+DATABASE_URL=URL.create("postgresql",username="postgres",password="123",host="192.168.122.121",port="5432",database="amigo")
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
