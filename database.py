@@ -3,12 +3,14 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 
-DATABASE_URL=URL.create("postgresql",username="postgres",password="123",host="192.168.122.121",port="5432",database="amigo")
+# DATABASE_URL=URL.create("postgresql",username="postgres",password="123",host="192.168.122.121",port="5432",database="amigo")
+DATABASE_URL=URL.create("postgresql",username="root",password="password",host="localhost",port="5433",database="simple_bank")
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-DATABASE_URL2 = URL.create("postgresql",username="erdr_reader_kfm_db",password="YrS$p1HUM@s2",host="192.168.122.5",database= "kfm_new")
+# DATABASE_URL2 = URL.create("postgresql",username="erdr_reader_kfm_db",password="YrS$p1HUM@s2",host="192.168.122.5",database= "kfm_new")
+DATABASE_URL2=URL.create("postgresql",username="root",password="password",host="localhost",port="5434",database="simple_bank_2")
 engine2 = create_engine(DATABASE_URL2)
 SessionLocal2 = sessionmaker(autocommit=False, autoflush=False, bind=engine2)
 
@@ -78,6 +80,3 @@ class LogUser(Base):
     username = Column(String)
     password = Column(String)
     email = Column(String)
-
-
-Base.metadata.create_all(bind=engine)
