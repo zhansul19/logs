@@ -17,6 +17,16 @@ async def search_log_entries_by_request_body_value(tag: str, value: str, current
                        .order_by(Log.date.desc()).all())
         logging.info(f"{value}", extra={'user': current_user, 'table': 'itap',
                                         'action': 'поиск пользователя по username'})
+    elif tag == "username_partial":
+        log_entries = (
+            db.query(Log.username, User.email, Log.request_body, Log.request_rels, Log.date, Log.approvement_data,
+                     Log.obwii, Log.depth_, Log.limit_)
+            .join(User, Log.username == User.username)
+            .filter(cast(Log.username, String)
+                    .contains(value))
+            .order_by(Log.date.desc()).all())
+        logging.info(f"{value}", extra={'user': current_user, 'table': 'itap',
+                                        'action': 'поиск пользователя по username_partial'})
     elif tag == "search":
         log_entries = (db.query(Log.username, User.email, Log.request_body, Log.request_rels, Log.date,Log.approvement_data, Log.obwii, Log.depth_, Log.limit_)
                        .join(User,Log.username == User.username)
@@ -26,8 +36,16 @@ async def search_log_entries_by_request_body_value(tag: str, value: str, current
                                         'action': 'поиск по иин'})
     elif tag == "fullname":
         log_entries = (db.query(Log.username, User.email, Log.request_body, Log.request_rels, Log.date,Log.approvement_data, Log.obwii, Log.depth_, Log.limit_)
-                       .join(User,Log.username == User.username)
-                       .filter(cast(User.email, String).contains(value))
+                       .join(User, Log.username == User.username)
+                       .filter(cast(User.email, String)
+                               .contains(value))
+                       .order_by(Log.date.desc()).all())
+        logging.info(f"{value}", extra={'user': current_user, 'table': 'itap',
+                                        'action': 'поиск пользователя по фио'})
+    elif tag == "fullname_full":
+        log_entries = (db.query(Log.username, User.email, Log.request_body, Log.request_rels, Log.date,Log.approvement_data, Log.obwii, Log.depth_, Log.limit_)
+                       .join(User, Log.username == User.username)
+                       .filter(User.email == value)
                        .order_by(Log.date.desc()).all())
         logging.info(f"{value}", extra={'user': current_user, 'table': 'itap',
                                         'action': 'поиск пользователя по фио'})
@@ -41,3 +59,7 @@ async def search_log_entries_by_request_body_value(tag: str, value: str, current
     if not log_entries_as_dict:
         raise HTTPException(status_code=404, detail="User's log entries not found")
     return log_entries_as_dict
+
+
+def to_camel_case(s):
+    return ' '.join(word.capitalize() for word in s.split())
