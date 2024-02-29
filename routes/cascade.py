@@ -4,6 +4,7 @@ from database import UsersLog, Cascade, get_db
 from auth import get_current_user
 from sqlalchemy.orm import Session
 from sqlalchemy import String, cast
+import re
 
 router = APIRouter()
 
@@ -21,6 +22,17 @@ async def get_users_log_entries_by_username(tag: str, value: str, current_user: 
                        .filter(cast(Cascade.name, String)
                                .contains(value)).order_by(UsersLog.time.desc()).all())
         logging.info(f"{value}",extra={'user': current_user, 'table': 'users_log_cascade', 'action': 'поиск пользователя по имени'})
+    elif tag == "fullname_full":
+        all_log_entries = (db.query(UsersLog.username,Cascade.name,UsersLog.message,UsersLog.debug_level,UsersLog.time)
+                       .join(Cascade,UsersLog.username == Cascade.email)
+                       .order_by(UsersLog.time.desc()).all())
+
+        log_entries = []
+        for log_entry in all_log_entries:
+            name = log_entry.name
+            if (not value or re.search(r'\b{}\b'.format(re.escape(value)), name)):
+                log_entries.append(log_entry)
+        logging.info(f"{value}",extra={'user': current_user, 'table': 'users_log_cascade', 'action': 'поиск пользователя по полному имени'})
     elif tag == "message":
         log_entries = (db.query(UsersLog.username,Cascade.name,UsersLog.message,UsersLog.debug_level,UsersLog.time)
                        .join(Cascade,UsersLog.username == Cascade.email)
