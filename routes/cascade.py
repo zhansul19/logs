@@ -16,6 +16,13 @@ async def get_users_log_entries_by_username(tag: str, value: str, current_user: 
                        .filter(UsersLog.username==value)
                        .order_by(UsersLog.time.desc()).all())
         logging.info(f"{value}",extra={'user': current_user, 'table': 'users_log_cascade', 'action': 'поиск пользователя по username'})
+    elif tag == "username_partial":
+        log_entries = (db.query(UsersLog.username,Cascade.name,UsersLog.message,UsersLog.debug_level,UsersLog.time)
+                       .join(Cascade,UsersLog.username == Cascade.email)
+                       .filter(cast(UsersLog.username, String)
+                               .contains(value))
+                       .order_by(UsersLog.time.desc()).all())
+        logging.info(f"{value}",extra={'user': current_user, 'table': 'users_log_cascade', 'action': 'поиск пользователя по username'})
     elif tag == "fullname":
         log_entries = (db.query(UsersLog.username,Cascade.name,UsersLog.message,UsersLog.debug_level,UsersLog.time)
                        .join(Cascade,UsersLog.username == Cascade.email)
