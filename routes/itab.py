@@ -86,13 +86,13 @@ async def get_log_fullname_log_entries(lname: str = Query(None),
 
     if full_fname :
         search_term = r'\y{}\y'.format(re.escape(full_fname))
-        filter_conditions.append(Log.request_body.op('~')(search_term))
+        filter_conditions.append(cast(Log.request_body, String).op('~')(search_term))
     if full_mname :
         search_term = r'\y{}\y'.format(re.escape(full_mname))
-        filter_conditions.append(Log.request_body.op('~')(search_term))
+        filter_conditions.append(cast(Log.request_body, String).op('~')(search_term))
     if full_lname :
         search_term = r'\y{}\y'.format(re.escape(full_lname))
-        filter_conditions.append(Log.request_body.op('~')(search_term))
+        filter_conditions.append(cast(Log.request_body, String).op('~')(search_term))
 
     # Combine filter conditions using AND
     combined_filter = and_(*filter_conditions)
