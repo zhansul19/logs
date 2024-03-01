@@ -43,8 +43,8 @@ async def get_users_log_entries_by_username(tag: str, value: str, current_user: 
     elif tag == "message":
         log_entries = (db.query(UsersLog.username,Cascade.name,UsersLog.message,UsersLog.debug_level,UsersLog.time)
                        .join(Cascade,UsersLog.username == Cascade.email)
-                       .filter(cast(UsersLog.message, String).order_by(UsersLog.time.desc())
-                               .contains(value)).all())
+                       .filter(cast(UsersLog.message, String)
+                               .contains(value)).order_by(UsersLog.time.desc()).all())
         logging.info(f"{value}",extra={'user': current_user, 'table': 'users_log_cascade', 'action': 'поиск по иин'})
 
     log_entries_as_dict = [
