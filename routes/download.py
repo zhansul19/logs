@@ -6,13 +6,19 @@ from sqlalchemy.orm import Session
 from sqlalchemy import String, cast, func, and_
 import pandas as pd
 import re
+from datetime import datetime
 
 
 router = APIRouter()
 
 
 @router.get("/{requestname}/{tagname}={value}/download_excel")
-async def download_excel(requestname: str, tagname: str, value: str, current_user: str = Depends(get_current_user),
+async def download_excel(requestname: str,
+                         tagname: str,
+                         value: str,
+                         start_date: datetime = Query(None),
+                         end_date: datetime = Query(None),
+                         current_user: str = Depends(get_current_user),
                          db: Session = Depends(get_db)):
     req_type = 0
     if requestname == "log":
@@ -21,14 +27,14 @@ async def download_excel(requestname: str, tagname: str, value: str, current_use
             log_entries = db.query(Log.username, User.email, Log.request_body, Log.request_rels, Log.date,
                                    Log.approvement_data, Log.obwii, Log.depth_, Log.limit_).join(User,
                                                                                                  Log.username == User.username).filter(
-                cast(User.email, String).contains(value)).all()
+                cast(User.email, String).contains(value))
             logging.info(f"{value}", extra={'user': current_user, 'table': 'itap',
                                             'action': 'скачал поиск пользователя по фио'})
         elif tagname == "username":
             log_entries = db.query(Log.username, User.email, Log.request_body, Log.request_rels, Log.date,
                                    Log.approvement_data, Log.obwii, Log.depth_, Log.limit_).join(User,
                                                                                                  Log.username == User.username).filter(
-                cast(User.username, String).contains(value)).all()
+                cast(User.username, String).contains(value))
             logging.info(f"{value}", extra={'user': current_user, 'table': 'itap',
                                             'action': 'скачал поиск пользователя по username'})
         elif tagname == "username_partial":
@@ -37,7 +43,7 @@ async def download_excel(requestname: str, tagname: str, value: str, current_use
                          Log.obwii, Log.depth_, Log.limit_)
                 .join(User, Log.username == User.username)
                 .filter(cast(Log.username, String)
-                        .contains(value)).all())
+                        .contains(value)))
             logging.info(f"{value}", extra={'user': current_user, 'table': 'itap',
                                             'action': 'скачал поиск пользователя по username'})
         elif tagname == "iin":
@@ -46,12 +52,19 @@ async def download_excel(requestname: str, tagname: str, value: str, current_use
                          Log.obwii, Log.depth_, Log.limit_)
                 .join(User, Log.username == User.username)
                 .filter(cast(Log.request_body, String)
-                        .contains(value)).all())
+                        .contains(value)))
             logging.info(f"{value}", extra={'user': current_user, 'table': 'itap',
                                             'action': 'скачал поиск по иин'})
 
         else:
             raise HTTPException(status_code=404, detail=f"Bad Request")
+
+        if start_date:
+            log_entries = log_entries.filter(Log.date >= start_date)
+        if end_date:
+            log_entries = log_entries.filter(Log.date <= end_date)
+
+        log_entries = log_entries.order_by(Log.date.desc()).all()
     elif requestname == "user_log":
         req_type = 2
         if tagname == "username":
@@ -82,6 +95,13 @@ async def download_excel(requestname: str, tagname: str, value: str, current_use
                                             'action': 'скачал поиск пользователя по фио'})
         else:
             raise HTTPException(status_code=404, detail=f"Bad Request")
+
+        if start_date:
+            log_entries = log_entries.filter(cast(UsersLog.time, String) >= start_date)
+        if end_date:
+            log_entries = log_entries.filter(cast(UsersLog.time, String) <= end_date)
+
+        log_entries = log_entries.order_by(UsersLog.time.desc()).all()
     else:
         raise HTTPException(status_code=404, detail=f"Bad Request")
 
@@ -116,30 +136,40 @@ async def download_excel(requestname: str, tagname: str, value: str, current_use
 
 
 @router.get("/dossie_log/{tag}={value}/download")
-async def download_excel_dossie_log(tag: str, value: str, current_user: str = Depends(get_current_user),
-                         db: Session = Depends(get_db2)):
+async def download_excel_dossie_log(tag: str, value: str,
+                                    start_date: datetime = Query(None),
+                                    end_date: datetime = Query(None),
+                                    current_user: str = Depends(get_current_user),
+                                    db: Session = Depends(get_db2)):
     if tag == "username":
-        log_entries = db.query(DossieLog).filter(DossieLog.user_name == value).all()
+        log_entries = db.query(DossieLog).filter(DossieLog.user_name == value)
         logging.info(f"{value}",extra={'user': current_user, 'table': 'dossie_log', 'action': 'скачал поиск пользователя по user_name'})
     elif tag == "username_partial":
         log_entries = (db.query(DossieLog)
                        .filter(cast(DossieLog.user_name, String)
                                .contains(value))
-                       .order_by(DossieLog.log_time.desc()).all())
+                       .order_by(DossieLog.log_time.desc()))
         logging.info(f"{value}", extra={'user': current_user, 'table': 'dossie_log',
                                         'action': 'скачал поиск пользователя по user_name'})
     elif tag == "fullname":
         value=value.upper()
-        log_entries = db.query(DossieLog).filter(func.concat(DossieLog.lname,' ',DossieLog.fname,' ',DossieLog.mname).contains(value)).order_by(DossieLog.log_time.desc()).all()
+        log_entries = db.query(DossieLog).filter(func.concat(DossieLog.lname,' ',DossieLog.fname,' ',DossieLog.mname).contains(value)).order_by(DossieLog.log_time.desc())
         logging.info(f"{value}",extra={'user': current_user, 'table': 'dossie_log', 'action': 'скачал поиск пользователя по фио'})
     elif tag == "fullname_full":
         value=value.upper()
-        log_entries = db.query(DossieLog).filter(func.concat(DossieLog.lname,' ',DossieLog.fname,' ',DossieLog.mname).contains(value)).order_by(DossieLog.log_time.desc()).all()
+        log_entries = db.query(DossieLog).filter(func.concat(DossieLog.lname,' ',DossieLog.fname,' ',DossieLog.mname).contains(value)).order_by(DossieLog.log_time.desc())
         logging.info(f"{value}",extra={'user': current_user, 'table': 'dossie_log', 'action': 'скачал поиск пользователя по фио'})
 
     elif tag == "action":
-        log_entries = db.query(DossieLog).filter(DossieLog.action.like(f'%{value}%')).all()
+        log_entries = db.query(DossieLog).filter(DossieLog.action.like(f'%{value}%'))
         logging.info(f"{value}",extra={'user': current_user, 'table': 'dossie_log', 'action': 'скачал поиск по иин'})
+
+    if start_date:
+        log_entries = log_entries.filter(DossieLog.log_time >= start_date)
+    if end_date:
+        log_entries = log_entries.filter(DossieLog.log_time <= end_date)
+
+    log_entries = log_entries.order_by(DossieLog.log_time.desc()).all()
 
     log_entries_as_dict = [
         {
@@ -173,6 +203,8 @@ async def get_dossie_fullname_log_entries(lname: str = Query(None),
                                           full_lname: str = Query(None),
                                           full_mname: str = Query(None),
                                           full_fname: str = Query(None),
+                                          start_date: datetime = Query(None),
+                                          end_date: datetime = Query(None),
                                           current_user: str = Depends(get_current_user),
                                           db: Session = Depends(get_db2)):
 
@@ -198,8 +230,14 @@ async def get_dossie_fullname_log_entries(lname: str = Query(None),
     # Combine filter conditions using AND
     combined_filter = and_(*filter_conditions)
 
-    log_entries = db.query(DossieLog).filter(combined_filter).all()
+    log_entries = db.query(DossieLog).filter(combined_filter)
 
+    if start_date:
+        log_entries = log_entries.filter(DossieLog.log_time >= start_date)
+    if end_date:
+        log_entries = log_entries.filter(DossieLog.log_time <= end_date)
+
+    log_entries = log_entries.order_by(DossieLog.log_time.desc()).all()
 
     log_entries_as_dict = [
         {
@@ -234,6 +272,8 @@ async def get_log_fullname_log_entries(lname: str = Query(None),
                                           full_lname: str = Query(None),
                                           full_mname: str = Query(None),
                                           full_fname: str = Query(None),
+                                          start_date: datetime = Query(None),
+                                          end_date: datetime = Query(None),
                                           current_user : str = Depends(get_current_user),
                                           db : Session = Depends(get_db)):
 
@@ -261,8 +301,13 @@ async def get_log_fullname_log_entries(lname: str = Query(None),
 
     log_entries = (db.query(Log.username, User.email, Log.request_body, Log.request_rels, Log.date,Log.approvement_data, Log.obwii, Log.depth_, Log.limit_)
                        .join(User, Log.username == User.username)
-                                 .filter(combined_filter)
-                                 .order_by(Log.date.desc()).all())
+                                 .filter(combined_filter))
+    if start_date:
+        log_entries = log_entries.filter(Log.date >= start_date)
+    if end_date:
+        log_entries = log_entries.filter(Log.date <= end_date)
+
+    log_entries = log_entries.order_by(Log.date.desc()).all()
 
     log_entries_as_dict = [
         dict(

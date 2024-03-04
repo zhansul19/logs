@@ -5,33 +5,42 @@ from auth import get_current_user
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, func, String, cast
 import re
+from datetime import datetime
 
 router = APIRouter()
 
 @router.get("/dossie_log/{tag}={value}")
-async def get_dossie_log_entries(tag: str, value: str, current_user: str = Depends(get_current_user),
-                                            db: Session = Depends(get_db2)):
+async def get_dossie_log_entries(tag: str,
+                                 value: str,
+                                 current_user: str = Depends(get_current_user),
+                                 start_date: datetime = Query(None),
+                                 end_date: datetime = Query(None),
+                                 db: Session = Depends(get_db2)):
     if tag == "username":
-        log_entries = db.query(DossieLog).filter(DossieLog.user_name == value).order_by(DossieLog.log_time.desc()).all()
+        log_entries = db.query(DossieLog).filter(DossieLog.user_name == value)
         logging.info(f"{value}",extra={'user': current_user, 'table': 'dossie_log', 'action': 'поиск пользователя по user_name'})
     if tag == "username_partial":
-        log_entries = (db.query(DossieLog)
-                       .filter(cast(DossieLog.user_name, String)
-                               .contains(value))
-                       .order_by(DossieLog.log_time.desc()).all())
+        log_entries = db.query(DossieLog).filter(cast(DossieLog.user_name, String).contains(value))
         logging.info(f"{value}",extra={'user': current_user, 'table': 'dossie_log', 'action': 'поиск пользователя по user_name'})
     elif tag == "fullname":
         value=value.upper()
-        log_entries = db.query(DossieLog).filter(func.concat(DossieLog.lname,' ',DossieLog.fname,' ',DossieLog.mname).contains(value)).order_by(DossieLog.log_time.desc()).all()
+        log_entries = db.query(DossieLog).filter(func.concat(DossieLog.lname,' ',DossieLog.fname,' ',DossieLog.mname).contains(value))
         logging.info(f"{value}",extra={'user': current_user, 'table': 'dossie_log', 'action': 'поиск пользователя по фио'})
     elif tag == "fullname_full":
         value=value.upper()
-        log_entries = db.query(DossieLog).filter(func.concat(DossieLog.lname,' ',DossieLog.fname,' ',DossieLog.mname).contains(value)).order_by(DossieLog.log_time.desc()).all()
+        log_entries = db.query(DossieLog).filter(func.concat(DossieLog.lname,' ',DossieLog.fname,' ',DossieLog.mname).contains(value))
         logging.info(f"{value}",extra={'user': current_user, 'table': 'dossie_log', 'action': 'поиск пользователя по фио'})
     elif tag == "action":
-        log_entries = db.query(DossieLog).filter(DossieLog.action.like(f'%{value}%')).order_by(DossieLog.log_time.desc()).all()
+        log_entries = db.query(DossieLog).filter(DossieLog.action.like(f'%{value}%'))
         logging.info(f"{value}",extra={'user': current_user, 'table': 'dossie_log', 'action': 'поиск по иин'})
 
+    # Filter by date range
+    if start_date:
+        log_entries = log_entries.filter(DossieLog.log_time >= start_date)
+    if end_date:
+        log_entries = log_entries.filter(DossieLog.log_time <= end_date)
+
+    log_entries = log_entries.order_by(DossieLog.log_time.desc()).all()
     if not log_entries:
         raise HTTPException(status_code=404, detail="User's log entries not found")
     return log_entries
@@ -44,6 +53,8 @@ async def get_dossie_fullname_log_entries(lname: str = Query(None),
                                           full_lname: str = Query(None),
                                           full_mname: str = Query(None),
                                           full_fname: str = Query(None),
+                                          start_date: datetime = Query(None),
+                                          end_date: datetime = Query(None),
                                           current_user: str = Depends(get_current_user),
                                           db: Session = Depends(get_db2)):
 
@@ -68,8 +79,14 @@ async def get_dossie_fullname_log_entries(lname: str = Query(None),
         filter_conditions.append(DossieLog.action.op('~')(search_term))
 
     combined_filter = and_(*filter_conditions)
-    log_entries = db.query(DossieLog).filter(combined_filter).order_by(DossieLog.log_time.desc()).all()
+    log_entries = db.query(DossieLog).filter(combined_filter)
+    # Filter by date range
+    if start_date:
+        log_entries = log_entries.filter(DossieLog.log_time >= start_date)
+    if end_date:
+        log_entries = log_entries.filter(DossieLog.log_time <= end_date)
 
+    log_entries = log_entries.order_by(DossieLog.log_time.desc()).all()
 
     if not log_entries:
         raise HTTPException(status_code=404, detail="User's log entries not found")

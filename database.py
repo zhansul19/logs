@@ -66,9 +66,9 @@ class Cascade(Base):
 
 # Define SQLAlchemy Model for the "users_log" table
 class UsersLog(Base):
-    __tablename__ = "users_log_cascade"
+    __tablename__ = "users_log"
 
-    time = Column(Integer, primary_key=True, index=True)
+    time = Column(DateTime, default=datetime.utcnow, primary_key=True, index=True)
     username = Column(String)
     debug_level = Column(Integer)
     message = Column(String)
