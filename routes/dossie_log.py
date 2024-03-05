@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Response, Query
+from fastapi import APIRouter, HTTPException, Depends, Query
 from logger import logging
 from database import get_db2, DossieLog
 from auth import get_current_user
@@ -9,6 +9,7 @@ from datetime import datetime
 
 router = APIRouter()
 
+
 @router.get("/dossie_log/{tag}={value}")
 async def get_dossie_log_entries(tag: str,
                                  value: str,
@@ -18,21 +19,33 @@ async def get_dossie_log_entries(tag: str,
                                  db: Session = Depends(get_db2)):
     if tag == "username":
         log_entries = db.query(DossieLog).filter(DossieLog.user_name == value)
-        logging.info(f"{value}",extra={'user': current_user, 'table': 'dossie_log', 'action': 'поиск пользователя по user_name'})
+        logging.info(f"{value}", extra={'user': current_user,
+                                        'table': 'dossie_log',
+                                        'action': 'поиск пользователя по user_name'})
     if tag == "username_partial":
         log_entries = db.query(DossieLog).filter(cast(DossieLog.user_name, String).contains(value))
-        logging.info(f"{value}",extra={'user': current_user, 'table': 'dossie_log', 'action': 'поиск пользователя по user_name'})
+        logging.info(f"{value}", extra={'user': current_user,
+                                        'table': 'dossie_log',
+                                        'action': 'поиск пользователя по user_name'})
     elif tag == "fullname":
-        value=value.upper()
-        log_entries = db.query(DossieLog).filter(func.concat(DossieLog.lname,' ',DossieLog.fname,' ',DossieLog.mname).contains(value))
-        logging.info(f"{value}",extra={'user': current_user, 'table': 'dossie_log', 'action': 'поиск пользователя по фио'})
+        value = value.upper()
+        log_entries = db.query(DossieLog).filter(func.concat(DossieLog.lname, ' ', DossieLog.fname, ' ', DossieLog.mname)
+                                                 .contains(value))
+        logging.info(f"{value}", extra={'user': current_user,
+                                        'table': 'dossie_log',
+                                        'action': 'поиск пользователя по фио'})
     elif tag == "fullname_full":
-        value=value.upper()
-        log_entries = db.query(DossieLog).filter(func.concat(DossieLog.lname,' ',DossieLog.fname,' ',DossieLog.mname).contains(value))
-        logging.info(f"{value}",extra={'user': current_user, 'table': 'dossie_log', 'action': 'поиск пользователя по фио'})
+        value = value.upper()
+        log_entries = db.query(DossieLog).filter(func.concat(DossieLog.lname, ' ', DossieLog.fname, ' ', DossieLog.mname)
+                                                 .contains(value))
+        logging.info(f"{value}", extra={'user': current_user,
+                                       'table': 'dossie_log',
+                                       'action': 'поиск пользователя по фио'})
     elif tag == "action":
         log_entries = db.query(DossieLog).filter(DossieLog.action.like(f'%{value}%'))
-        logging.info(f"{value}",extra={'user': current_user, 'table': 'dossie_log', 'action': 'поиск по иин'})
+        logging.info(f"{value}", extra={'user': current_user,
+                                        'table': 'dossie_log',
+                                        'action': 'поиск по иин'})
 
     # Filter by date range
     if start_date:
@@ -44,6 +57,7 @@ async def get_dossie_log_entries(tag: str,
     if not log_entries:
         raise HTTPException(status_code=404, detail="User's log entries not found")
     return log_entries
+
 
 # http://127.0.0.1:8000/dossie_log/fio/?lname=СҰЛТАН&fname=ЖАНСАЯ&mname=БАУЫРЖАНҚЫЗЫ
 @router.get("/dossie_log/fio/")
@@ -60,21 +74,19 @@ async def get_dossie_fullname_log_entries(lname: str = Query(None),
 
     # empty list to store filter conditions
     filter_conditions = []
-    if fname :
+    if fname:
         filter_conditions.append(DossieLog.action.like(f'%{fname}%'))
-    if mname :
+    if mname:
         filter_conditions.append(DossieLog.action.like(f'%{mname}%'))
-    if lname :
+    if lname:
         filter_conditions.append(DossieLog.action.like(f'%{lname}%'))
-
-
-    if full_fname :
+    if full_fname:
         search_term = r'\y{}\y'.format(re.escape(full_fname))
         filter_conditions.append(DossieLog.action.op('~')(search_term))
-    if full_mname :
+    if full_mname:
         search_term = r'\y{}\y'.format(re.escape(full_mname))
         filter_conditions.append(DossieLog.action.op('~')(search_term))
-    if full_lname :
+    if full_lname:
         search_term = r'\y{}\y'.format(re.escape(full_lname))
         filter_conditions.append(DossieLog.action.op('~')(search_term))
 

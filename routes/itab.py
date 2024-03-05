@@ -9,13 +9,14 @@ import re
 
 router = APIRouter()
 
+
 @router.get("/log/")
-async def search_log(current_user:str = Depends(get_current_user),
-                       start_date: datetime = Query(None),
-                       end_date: datetime = Query(None),
-                       db: Session = Depends(get_db)):
-    log_entries = db.query(Log.username, User.email, Log.request_body, Log.request_rels, Log.date, Log.approvement_data,
-                           Log.obwii, Log.depth_, Log.limit_).join(User, Log.username == User.username).order_by(Log.date.desc()).all()
+async def search_log(current_user: str = Depends(get_current_user),
+                     db: Session = Depends(get_db)):
+    log_entries = (db.query(Log.username, User.email, Log.request_body, Log.request_rels, Log.date,
+                            Log.approvement_data, Log.obwii, Log.depth_, Log.limit_)
+                   .join(User, Log.username == User.username)
+                   .order_by(Log.date.desc()).all())
     log_entries_as_dict = [
             dict(
                 username=row[0], email=row[1], request_body=row[2], request_rels=row[3],
@@ -27,15 +28,17 @@ async def search_log(current_user:str = Depends(get_current_user),
         raise HTTPException(status_code=404, detail="User's log entries not found")
     return log_entries_as_dict
 
+
 @router.get("/log/{tag}={value}/")
 async def search_log_entries_by_request_body_value(tag: str,
                                                    value: str,
-                                                   current_user:str = Depends(get_current_user),
+                                                   current_user: str = Depends(get_current_user),
                                                    start_date: datetime = Query(None),
                                                    end_date: datetime = Query(None),
                                                    db: Session = Depends(get_db)):
-    log_entries = db.query(Log.username, User.email, Log.request_body, Log.request_rels, Log.date, Log.approvement_data,
-                 Log.obwii, Log.depth_, Log.limit_).join(User, Log.username == User.username)
+    log_entries = (db.query(Log.username, User.email, Log.request_body, Log.request_rels, Log.date,
+                            Log.approvement_data, Log.obwii, Log.depth_, Log.limit_)
+                   .join(User, Log.username == User.username))
 
     if tag == "username":
         log_entries = log_entries.filter(Log.username == value)
@@ -81,17 +84,18 @@ async def search_log_entries_by_request_body_value(tag: str,
 def to_camel_case(s):
     return ' '.join(word.capitalize() for word in s.split())
 
+
 @router.get("/log/search_fio/")
 async def get_log_fullname_log_entries(lname: str = Query(None),
-                                          mname : str = Query(None),
-                                          fname : str = Query(None),
-                                          full_lname: str = Query(None),
-                                          full_mname: str = Query(None),
-                                          full_fname: str = Query(None),
-                                          start_date: datetime = Query(None),
-                                          end_date: datetime = Query(None),
-                                          current_user : str = Depends(get_current_user),
-                                          db : Session = Depends(get_db)):
+                                       mname: str = Query(None),
+                                       fname: str = Query(None),
+                                       full_lname: str = Query(None),
+                                       full_mname: str = Query(None),
+                                       full_fname: str = Query(None),
+                                       start_date: datetime = Query(None),
+                                       end_date: datetime = Query(None),
+                                       current_user: str = Depends(get_current_user),
+                                       db: Session = Depends(get_db)):
 
     # empty list to store filter conditions
     filter_conditions = []
@@ -102,22 +106,23 @@ async def get_log_fullname_log_entries(lname: str = Query(None),
     if lname:
         filter_conditions.append(cast(Log.request_body, String).contains(lname))
 
-    if full_fname :
+    if full_fname:
         search_term = r'\y{}\y'.format(re.escape(full_fname))
         filter_conditions.append(cast(Log.request_body, String).op('~')(search_term))
-    if full_mname :
+    if full_mname:
         search_term = r'\y{}\y'.format(re.escape(full_mname))
         filter_conditions.append(cast(Log.request_body, String).op('~')(search_term))
-    if full_lname :
+    if full_lname:
         search_term = r'\y{}\y'.format(re.escape(full_lname))
         filter_conditions.append(cast(Log.request_body, String).op('~')(search_term))
 
     # Combine filter conditions using AND
     combined_filter = and_(*filter_conditions)
 
-    log_entries = (db.query(Log.username, User.email, Log.request_body, Log.request_rels, Log.date,Log.approvement_data, Log.obwii, Log.depth_, Log.limit_)
-                       .join(User, Log.username == User.username)
-                                 .filter(combined_filter))
+    log_entries = (db.query(Log.username, User.email, Log.request_body, Log.request_rels, Log.date,
+                            Log.approvement_data, Log.obwii, Log.depth_, Log.limit_)
+                   .join(User, Log.username == User.username)
+                     .filter(combined_filter))
     # Filter by date range
     if start_date:
         log_entries = log_entries.filter(Log.date >= start_date)
@@ -135,8 +140,5 @@ async def get_log_fullname_log_entries(lname: str = Query(None),
     ]
     if not log_entries_as_dict:
         raise HTTPException(status_code=404, detail="User's log entries not found")
-    logging.info(f"{lname} {fname} {mname}", extra={'user': current_user,'table': 'itab','action': 'поиск фл по фио'})
+    logging.info(f"{lname} {fname} {mname}", extra={'user': current_user, 'table': 'itab', 'action': 'поиск фл по фио'})
     return log_entries_as_dict
-
-
-

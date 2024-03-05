@@ -20,31 +20,29 @@ async def download_excel(requestname: str,
                          end_date: datetime = Query(None),
                          current_user: str = Depends(get_current_user),
                          db: Session = Depends(get_db)):
-    req_type = 0
     if requestname == "log":
         req_type = 1
         if tagname == "fullname":
-            log_entries = db.query(Log.username, User.email, Log.request_body, Log.request_rels, Log.date,
-                                   Log.approvement_data, Log.obwii, Log.depth_, Log.limit_).join(User,
-                                                                                                 Log.username == User.username).filter(
-                cast(User.email, String).contains(value))
-            logging.info(f"{value}", extra={'user': current_user, 'table': 'itap',
+            log_entries = (db.query(Log.username, User.email, Log.request_body, Log.request_rels, Log.date, Log.approvement_data, Log.obwii, Log.depth_, Log.limit_)
+                           .join(User, Log.username == User.username)
+                           .filter(cast(User.email, String).contains(value)))
+            logging.info(f"{value}", extra={'user': current_user,
+                                            'table': 'itap',
                                             'action': 'скачал поиск пользователя по фио'})
         elif tagname == "username":
-            log_entries = db.query(Log.username, User.email, Log.request_body, Log.request_rels, Log.date,
-                                   Log.approvement_data, Log.obwii, Log.depth_, Log.limit_).join(User,
-                                                                                                 Log.username == User.username).filter(
-                cast(User.username, String).contains(value))
-            logging.info(f"{value}", extra={'user': current_user, 'table': 'itap',
+            log_entries = (db.query(Log.username, User.email, Log.request_body, Log.request_rels, Log.date, Log.approvement_data, Log.obwii, Log.depth_, Log.limit_)
+                           .join(User, Log.username == User.username)
+                           .filter(cast(User.username, String).contains(value)))
+            logging.info(f"{value}", extra={'user': current_user,
+                                            'table': 'itap',
                                             'action': 'скачал поиск пользователя по username'})
         elif tagname == "username_partial":
             log_entries = (
-                db.query(Log.username, User.email, Log.request_body, Log.request_rels, Log.date, Log.approvement_data,
-                         Log.obwii, Log.depth_, Log.limit_)
+                db.query(Log.username, User.email, Log.request_body, Log.request_rels, Log.date, Log.approvement_data, Log.obwii, Log.depth_, Log.limit_)
                 .join(User, Log.username == User.username)
-                .filter(cast(Log.username, String)
-                        .contains(value)))
-            logging.info(f"{value}", extra={'user': current_user, 'table': 'itap',
+                .filter(cast(Log.username, String).contains(value)))
+            logging.info(f"{value}", extra={'user': current_user,
+                                            'table': 'itap',
                                             'action': 'скачал поиск пользователя по username'})
         elif tagname == "iin":
             log_entries = (
@@ -143,7 +141,9 @@ async def download_excel_dossie_log(tag: str, value: str,
                                     db: Session = Depends(get_db2)):
     if tag == "username":
         log_entries = db.query(DossieLog).filter(DossieLog.user_name == value)
-        logging.info(f"{value}",extra={'user': current_user, 'table': 'dossie_log', 'action': 'скачал поиск пользователя по user_name'})
+        logging.info(f"{value}", extra={'user': current_user,
+                                        'table': 'dossie_log',
+                                        'action': 'скачал поиск пользователя по user_name'})
     elif tag == "username_partial":
         log_entries = (db.query(DossieLog)
                        .filter(cast(DossieLog.user_name, String)
@@ -152,17 +152,18 @@ async def download_excel_dossie_log(tag: str, value: str,
         logging.info(f"{value}", extra={'user': current_user, 'table': 'dossie_log',
                                         'action': 'скачал поиск пользователя по user_name'})
     elif tag == "fullname":
-        value=value.upper()
-        log_entries = db.query(DossieLog).filter(func.concat(DossieLog.lname,' ',DossieLog.fname,' ',DossieLog.mname).contains(value)).order_by(DossieLog.log_time.desc())
-        logging.info(f"{value}",extra={'user': current_user, 'table': 'dossie_log', 'action': 'скачал поиск пользователя по фио'})
+        value = value.upper()
+        log_entries = db.query(DossieLog).filter(func.concat(DossieLog.lname, ' ', DossieLog.fname, ' ', DossieLog.mname)
+                                                 .contains(value)).order_by(DossieLog.log_time.desc())
+        logging.info(f"{value}", extra={'user': current_user, 'table': 'dossie_log', 'action': 'скачал поиск пользователя по фио'})
     elif tag == "fullname_full":
-        value=value.upper()
-        log_entries = db.query(DossieLog).filter(func.concat(DossieLog.lname,' ',DossieLog.fname,' ',DossieLog.mname).contains(value)).order_by(DossieLog.log_time.desc())
-        logging.info(f"{value}",extra={'user': current_user, 'table': 'dossie_log', 'action': 'скачал поиск пользователя по фио'})
+        value = value.upper()
+        log_entries = db.query(DossieLog).filter(func.concat(DossieLog.lname, ' ', DossieLog.fname, ' ', DossieLog.mname).contains(value)).order_by(DossieLog.log_time.desc())
+        logging.info(f"{value}", extra={'user': current_user, 'table': 'dossie_log', 'action': 'скачал поиск пользователя по фио'})
 
     elif tag == "action":
         log_entries = db.query(DossieLog).filter(DossieLog.action.like(f'%{value}%'))
-        logging.info(f"{value}",extra={'user': current_user, 'table': 'dossie_log', 'action': 'скачал поиск по иин'})
+        logging.info(f"{value}", extra={'user': current_user, 'table': 'dossie_log', 'action': 'скачал поиск по иин'})
 
     if start_date:
         log_entries = log_entries.filter(DossieLog.log_time >= start_date)
@@ -217,13 +218,13 @@ async def get_dossie_fullname_log_entries(lname: str = Query(None),
     if lname:
         filter_conditions.append(DossieLog.action.like(f'%{lname}%'))
 
-    if full_fname :
+    if full_fname:
         search_term = r'\y{}\y'.format(re.escape(full_fname))
         filter_conditions.append(DossieLog.action.op('~')(search_term))
-    if full_mname :
+    if full_mname:
         search_term = r'\y{}\y'.format(re.escape(full_mname))
         filter_conditions.append(DossieLog.action.op('~')(search_term))
-    if full_lname :
+    if full_lname:
         search_term = r'\y{}\y'.format(re.escape(full_lname))
         filter_conditions.append(DossieLog.action.op('~')(search_term))
 
@@ -259,23 +260,24 @@ async def get_dossie_fullname_log_entries(lname: str = Query(None),
             content = file.read()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to read Excel file: {e}")
-    logging.info(f"{lname} {fname} {mname}", extra={'user': current_user,'table': 'dossie_log','action': 'скачал поиск фл по фио'})
+    logging.info(f"{lname} {fname} {mname}", extra={'user': current_user,
+                                                    'table': 'dossie_log',
+                                                    'action': 'скачал поиск фл по фио'})
     return Response(content, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     headers={"Content-Disposition": "attachment;filename=data.xlsx"})
 
 
-
 @router.get("/log/download/search_fio/")
 async def get_log_fullname_log_entries(lname: str = Query(None),
-                                          mname : str = Query(None),
-                                          fname : str = Query(None),
-                                          full_lname: str = Query(None),
-                                          full_mname: str = Query(None),
-                                          full_fname: str = Query(None),
-                                          start_date: datetime = Query(None),
-                                          end_date: datetime = Query(None),
-                                          current_user : str = Depends(get_current_user),
-                                          db : Session = Depends(get_db)):
+                                       mname: str = Query(None),
+                                       fname: str = Query(None),
+                                       full_lname: str = Query(None),
+                                       full_mname: str = Query(None),
+                                       full_fname: str = Query(None),
+                                       start_date: datetime = Query(None),
+                                       end_date: datetime = Query(None),
+                                       current_user: str = Depends(get_current_user),
+                                       db: Session = Depends(get_db)):
 
     # empty list to store filter conditions
     filter_conditions = []
@@ -286,22 +288,22 @@ async def get_log_fullname_log_entries(lname: str = Query(None),
     if lname:
         filter_conditions.append(cast(Log.request_body, String).contains(lname))
 
-    if full_fname :
+    if full_fname:
         search_term = r'\y{}\y'.format(re.escape(full_fname))
         filter_conditions.append(cast(Log.request_body, String).op('~')(search_term))
-    if full_mname :
+    if full_mname:
         search_term = r'\y{}\y'.format(re.escape(full_mname))
         filter_conditions.append(cast(Log.request_body, String).op('~')(search_term))
-    if full_lname :
+    if full_lname:
         search_term = r'\y{}\y'.format(re.escape(full_lname))
         filter_conditions.append(cast(Log.request_body, String).op('~')(search_term))
 
     # Combine filter conditions using AND
     combined_filter = and_(*filter_conditions)
 
-    log_entries = (db.query(Log.username, User.email, Log.request_body, Log.request_rels, Log.date,Log.approvement_data, Log.obwii, Log.depth_, Log.limit_)
-                       .join(User, Log.username == User.username)
-                                 .filter(combined_filter))
+    log_entries = (db.query(Log.username, User.email, Log.request_body, Log.request_rels, Log.date, Log.approvement_data, Log.obwii, Log.depth_, Log.limit_)
+                   .join(User, Log.username == User.username)
+                     .filter(combined_filter))
     if start_date:
         log_entries = log_entries.filter(Log.date >= start_date)
     if end_date:
