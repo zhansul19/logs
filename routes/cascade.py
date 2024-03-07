@@ -47,7 +47,10 @@ async def get_users_log_entries_by_username(tag: str,
     if end_date:
         log_entries = log_entries.filter(cast(UsersLog.time, String) <= end_date)
 
-    log_entries = log_entries.order_by(UsersLog.time.desc()).all()
+    if start_date or end_date:
+        log_entries = log_entries.order_by(UsersLog.time.asc()).all()
+    else:
+        log_entries = log_entries.order_by(UsersLog.time.desc()).all()
 
     log_entries_as_dict = [
         dict(

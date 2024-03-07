@@ -67,7 +67,10 @@ async def search_log_entries_by_request_body_value(tag: str,
     if end_date:
         log_entries = log_entries.filter(Log.date <= end_date)
 
-    log_entries = log_entries.order_by(Log.date.desc()).all()
+    if start_date or end_date:
+        log_entries = log_entries.order_by(Log.date.asc()).all()
+    else:
+        log_entries = log_entries.order_by(Log.date.desc()).all()
 
     log_entries_as_dict = [
         dict(
@@ -129,7 +132,10 @@ async def get_log_fullname_log_entries(lname: str = Query(None),
     if end_date:
         log_entries = log_entries.filter(Log.date <= end_date)
 
-    log_entries = log_entries.order_by(Log.date.desc()).all()
+    if start_date or end_date:
+        log_entries = log_entries.order_by(Log.date.asc()).all()
+    else:
+        log_entries = log_entries.order_by(Log.date.desc()).all()
 
     log_entries_as_dict = [
         dict(

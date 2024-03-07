@@ -53,7 +53,11 @@ async def get_dossie_log_entries(tag: str,
     if end_date:
         log_entries = log_entries.filter(DossieLog.log_time <= end_date)
 
-    log_entries = log_entries.order_by(DossieLog.log_time.desc()).all()
+    if start_date or end_date:
+        log_entries = log_entries.order_by(DossieLog.log_time.asc()).all()
+    else:
+        log_entries = log_entries.order_by(DossieLog.log_time.desc()).all()
+
     if not log_entries:
         raise HTTPException(status_code=404, detail="User's log entries not found")
     return log_entries
@@ -98,7 +102,10 @@ async def get_dossie_fullname_log_entries(lname: str = Query(None),
     if end_date:
         log_entries = log_entries.filter(DossieLog.log_time <= end_date)
 
-    log_entries = log_entries.order_by(DossieLog.log_time.desc()).all()
+    if start_date or end_date:
+        log_entries = log_entries.order_by(DossieLog.log_time.asc()).all()
+    else:
+        log_entries = log_entries.order_by(DossieLog.log_time.desc()).all()
 
     if not log_entries:
         raise HTTPException(status_code=404, detail="User's log entries not found")
