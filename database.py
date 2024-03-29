@@ -8,10 +8,10 @@ from sqlalchemy.ext.declarative import declarative_base
 
 load_dotenv()
 DATABASE_URL = URL.create("postgresql",
-                          username=os.getenv("username0"),
-                          password=os.getenv("password0"),
-                          host=os.getenv("host0"),
-                          database=os.getenv("database0"))
+                          username=os.getenv("username1"),
+                          password=os.getenv("password1"),
+                          host=os.getenv("host1"),
+                          database=os.getenv("database1"))
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
