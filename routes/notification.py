@@ -11,7 +11,7 @@ active_connections = set()
 async def check_database_for_changes_alchemy(websocket: WebSocket, db):
     last_review_id = 0
     while True:
-        log_entries = (db.query(Log.username, Log.request_body, Log.id, Log.date)
+        log_entries = (db.query(Log.username, Log.date, Log.id, Administration.iin,Administration.fio)
                        .join(Administration, Log.obwii.like('%' + Administration.iin + '%'))
                        .filter(Log.id > last_review_id).all())
         if log_entries:
