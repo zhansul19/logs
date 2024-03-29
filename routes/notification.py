@@ -17,7 +17,7 @@ async def check_database_for_changes_alchemy(websocket: WebSocket, db):
         if log_entries:
             for review in log_entries:
                 data = {
-                    "New search": f"{review[0]}"
+                    "New search": f"{review}"
                 }
                 await websocket.send_json(data)
                 last_review_id = review[2]  # Assuming review[2] contains the ID
