@@ -18,31 +18,31 @@ async def get_dossie_log_entries(tag: str,
                                  end_date: datetime = Query(None),
                                  db: Session = Depends(get_db2)):
     if tag == "username":
-        log_entries = db.query(DossieLog).filter(DossieLog.user_name == value).filter(DossieLog.c.action.like('Вход%'))
+        log_entries = db.query(DossieLog).filter(DossieLog.user_name == value).filter(DossieLog.action.like('Вход%'))
         logging.info(f"{value}", extra={'user': current_user,
                                         'table': 'dossie_log',
                                         'action': 'поиск пользователя по user_name'})
     if tag == "username_partial":
-        log_entries = db.query(DossieLog).filter(cast(DossieLog.user_name, String).contains(value)).filter(DossieLog.c.action.like('Вход%'))
+        log_entries = db.query(DossieLog).filter(cast(DossieLog.user_name, String).contains(value)).filter(DossieLog.action.like('Вход%'))
         logging.info(f"{value}", extra={'user': current_user,
                                         'table': 'dossie_log',
                                         'action': 'поиск пользователя по user_name'})
     elif tag == "fullname":
         value = value.upper()
         log_entries = db.query(DossieLog).filter(func.concat(DossieLog.lname, ' ', DossieLog.fname, ' ', DossieLog.mname)
-                                                 .contains(value)).filter(DossieLog.c.action.like('Вход%'))
+                                                 .contains(value)).filter(DossieLog.action.like('Вход%'))
         logging.info(f"{value}", extra={'user': current_user,
                                         'table': 'dossie_log',
                                         'action': 'поиск пользователя по фио'})
     elif tag == "fullname_full":
         value = value.upper()
         log_entries = db.query(DossieLog).filter(func.concat(DossieLog.lname, ' ', DossieLog.fname, ' ', DossieLog.mname)
-                                                 .contains(value)).filter(DossieLog.c.action.like('Вход%'))
+                                                 .contains(value)).filter(DossieLog.action.like('Вход%'))
         logging.info(f"{value}", extra={'user': current_user,
                                        'table': 'dossie_log',
                                        'action': 'поиск пользователя по фио'})
     elif tag == "action":
-        log_entries = db.query(DossieLog).filter(DossieLog.action.like(f'%{value}%')).filter(DossieLog.c.action.like('Вход%'))
+        log_entries = db.query(DossieLog).filter(DossieLog.action.like(f'%{value}%')).filter(DossieLog.action.like('Вход%'))
         logging.info(f"{value}", extra={'user': current_user,
                                         'table': 'dossie_log',
                                         'action': 'поиск по иин'})
@@ -95,7 +95,7 @@ async def get_dossie_fullname_log_entries(lname: str = Query(None),
         filter_conditions.append(DossieLog.action.op('~')(search_term))
 
     combined_filter = and_(*filter_conditions)
-    log_entries = db.query(DossieLog).filter(combined_filter).filter(DossieLog.c.action.like('Вход%'))
+    log_entries = db.query(DossieLog).filter(combined_filter).filter(DossieLog.action.like('Вход%'))
     # Filter by date range
     if start_date:
         log_entries = log_entries.filter(DossieLog.log_time >= start_date)
