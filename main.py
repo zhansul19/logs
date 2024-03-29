@@ -5,6 +5,9 @@ from routes.itab import router as itab_router
 from routes.cascade import router as cascade_router
 from routes.download import router as download_router
 from routes.dossie_log import router as dossie_log_router
+from routes.administration import router as admin_router
+from routes.notification import router as ws_router
+
 
 app = FastAPI()
 
@@ -27,3 +30,10 @@ app.include_router(itab_router)
 app.include_router(cascade_router)
 app.include_router(download_router)
 app.include_router(dossie_log_router)
+app.include_router(admin_router)
+app.include_router(ws_router)
+
+
+# @app.on_event("startup")
+# async def startup_event():
+#     await listen_for_notifications()
