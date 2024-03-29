@@ -100,3 +100,13 @@ class LogUser(Base):
     username = Column(String)
     password = Column(String)
     email = Column(String)
+
+
+class Administration(Base):
+    __tablename__ = "administration"
+
+    id = Column(Integer, primary_key=True, index=True)
+    dolzhnost = Column(String)
+    podrazdeleniye = Column(String)
+    fio = Column(String)
+    iin = Column(String)
