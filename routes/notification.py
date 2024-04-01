@@ -19,8 +19,8 @@ async def check_database_for_changes_alchemy(websocket: WebSocket, db):
                 data = {
                     "New search": f"{review}"
                 }
-                # await websocket.send_json(review)
-                await websocket.send_text(review[0]+" искал "+review[4])
+                await websocket.send_json(data)
+                # await websocket.send_text(review[0]+" искал "+review[4])
                 last_review_id = review[2]
 
         await asyncio.sleep(10)
