@@ -53,7 +53,7 @@ async def send_email():
     try:
         # Establish connection to SMTP server
         server = smtplib.SMTP(smtp_server, smtp_port)
-        server.connect(smtp_server, 465)
+        server.connect(smtp_server, 587)
         server.starttls()  # Start TLS for secure connection
         server.login('oculus@afm.gov.kz', 'Qazaq7878+')  # Login to SMTP server
         # lioe pvaw qgui qalq
