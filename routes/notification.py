@@ -1,4 +1,4 @@
-from fastapi import APIRouter, WebSocket, Depends
+from fastapi import APIRouter, WebSocket, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import Log, Administration, get_db
 import asyncio
@@ -16,8 +16,9 @@ async def check_database_for_changes_alchemy(websocket: WebSocket, db):
                        .filter(Log.id > last_review_id).all())
         if log_entries:
             for review in log_entries:
+                formatted_date = review[1].strftime('%Y-%m-%d')  # Format the datetime object
                 data = {
-                    "New search": f"{review}"
+                    "New search": f"('{review[0]}', {formatted_date}, {review[2]}, '{review[3]}', '{review[4]}')"
                 }
                 await websocket.send_json(data)
                 # await websocket.send_text(review[0]+" искал "+review[4])
