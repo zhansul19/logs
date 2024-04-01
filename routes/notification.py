@@ -16,7 +16,8 @@ async def check_database_for_changes_alchemy(websocket: WebSocket, db):
     while True:
         log_entries = (db.query(Log.username, Log.date, Log.id, Administration.iin, Administration.fio)
                        .join(Administration, Log.obwii.like('%' + Administration.iin + '%'))
-                       .filter(Log.id > last_review_id).all())
+                       .filter(Log.id > last_review_id)
+                       .order_by(Log.date.desc()).all())
         if log_entries:
             for review in log_entries:
                 formatted_date = review[1].strftime('%Y-%m-%d')  # Format the datetime object

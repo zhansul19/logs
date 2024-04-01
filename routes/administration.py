@@ -24,7 +24,7 @@ async def get_log_entries(request_name: str,
 
     log_entries_as_dict = [
         dict(
-            time=row[0], name=row[1], iin=row[2], fio=row[3], source=source
+            date=row[0], username=row[1], iin=row[2], fio=row[3], source=source
         )
         for row in log_entries
     ]
@@ -67,7 +67,7 @@ async def get_log_entries(request_name: str,
 
     log_entries_as_dict = [
         dict(
-            time=row[0], name=row[1], iin=row[2], fio=row[3], source=source
+            date=row[0], username=row[1], iin=row[2], fio=row[3], source=source
         )
         for row in log_entries
     ]
