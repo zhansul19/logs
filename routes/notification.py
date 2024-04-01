@@ -58,11 +58,11 @@ async def send_email():
         # Create email message
         msg = MIMEText("message")
         msg['From'] = "oculus@afm.gov.kz"
-        msg['To'] = "zhansultanjan@gmail.com"
+        msg['To'] = "zh.zhangaliev@afm.gov.kz"
         msg['Subject'] = "subject"
 
         # Send email
-        server.sendmail("zhansultanjan@gmail.com", "zhansultanjan@gmail.com", msg.as_string())
+        server.sendmail("oculus@afm.gov.kz", "zh.zhangaliev@afm.gov.kz", msg.as_string())
 
         # Close connection to SMTP server
         server.quit()
