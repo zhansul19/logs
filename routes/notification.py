@@ -3,6 +3,9 @@ from sqlalchemy.orm import Session
 from database import Log, Administration, get_db
 import asyncio
 
+import smtplib
+from email.mime.text import MIMEText
+
 router = APIRouter()
 # WebSocket connections
 active_connections = set()
@@ -39,3 +42,32 @@ async def websocket_endpoint(websocket: WebSocket,
             await check_database_for_changes_alchemy(websocket, db)
     finally:
         active_connections.remove(websocket)
+
+
+@router.post("/send_email/")
+async def send_email():
+    smtp_server = '192.168.30.25'
+    smtp_port = 25  # Default SMTP port
+
+    try:
+        # Establish connection to SMTP server
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()  # Start TLS for secure connection
+        server.login('oculus@afm.gov.kz', 'Qazaq7878+')  # Login to SMTP server
+        # lioe pvaw qgui qalq
+        # Create email message
+        msg = MIMEText("message")
+        msg['From'] = "oculus@afm.gov.kz"
+        msg['To'] = "zhansultanjan@gmail.com"
+        msg['Subject'] = "subject"
+
+        # Send email
+        server.sendmail("zhansultanjan@gmail.com", "zhansultanjan@gmail.com", msg.as_string())
+
+        # Close connection to SMTP server
+        server.quit()
+
+        return {"message": "Email sent successfully"}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
