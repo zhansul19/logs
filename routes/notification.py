@@ -2,13 +2,44 @@ from fastapi import APIRouter, WebSocket, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import Log, Administration, get_db
 import asyncio
-
+import os
+from dotenv import load_dotenv
 import smtplib
 from email.mime.text import MIMEText
 
 router = APIRouter()
 # WebSocket connections
 active_connections = set()
+load_dotenv()
+
+
+async def send_email(message: str):
+    smtp_server = os.getenv("smtp_host")
+    smtp_port = 25  # Default SMTP port
+
+    try:
+        # Establish connection to SMTP server
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.connect(smtp_server, 587)
+        server.starttls()  # Start TLS for secure connection
+        server.login(os.getenv("smtp_user"), os.getenv("smtp_password"))  # Login to SMTP server
+
+        # Create email message
+        msg = MIMEText(message)
+        msg['From'] = os.getenv("smtp_user")
+        msg['To'] = os.getenv("smtp_consumer")
+        msg['Subject'] = "Поиск рисковых логов"
+
+        # Send email
+        server.sendmail(os.getenv("smtp_user"), os.getenv("smtp_consumer"), msg.as_string())
+
+        # Close connection to SMTP server
+        server.quit()
+
+        return {"message": "Email sent successfully"}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
 
 
 async def check_database_for_changes_alchemy(websocket: WebSocket, db):
@@ -25,6 +56,7 @@ async def check_database_for_changes_alchemy(websocket: WebSocket, db):
                     "New search": f"('{review[0]}', {formatted_date}, {review[2]}, '{review[3]}', '{review[4]}')"
                 }
                 await websocket.send_json(data)
+                await send_email(review[0] + " искал " + review[4] + " в " + formatted_date)
                 # await websocket.send_text(review[0]+" искал "+review[4])
                 last_review_id = review[2]
 
@@ -43,33 +75,3 @@ async def websocket_endpoint(websocket: WebSocket,
             await check_database_for_changes_alchemy(websocket, db)
     finally:
         active_connections.remove(websocket)
-
-
-@router.post("/send_email/")
-async def send_email():
-    smtp_server = '192.168.30.25'
-    smtp_port = 25  # Default SMTP port
-
-    try:
-        # Establish connection to SMTP server
-        server = smtplib.SMTP(smtp_server, smtp_port)
-        server.connect(smtp_server, 587)
-        server.starttls()  # Start TLS for secure connection
-        server.login('oculus@afm.gov.kz', 'Qazaq7878+')  # Login to SMTP server
-        # lioe pvaw qgui qalq
-        # Create email message
-        msg = MIMEText("message")
-        msg['From'] = "oculus@afm.gov.kz"
-        msg['To'] = "zh.zhangaliev@afm.gov.kz"
-        msg['Subject'] = "subject"
-
-        # Send email
-        server.sendmail("oculus@afm.gov.kz", "zh.zhangaliev@afm.gov.kz", msg.as_string())
-
-        # Close connection to SMTP server
-        server.quit()
-
-        return {"message": "Email sent successfully"}
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
