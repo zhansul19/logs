@@ -6,6 +6,7 @@ import os
 from dotenv import load_dotenv
 import smtplib
 from email.mime.text import MIMEText
+import datetime
 
 router = APIRouter()
 # WebSocket connections
@@ -52,13 +53,15 @@ async def check_database_for_changes_alchemy(websocket: WebSocket, db):
         if log_entries:
             for review in log_entries:
                 formatted_date = review[1].strftime('%Y-%m-%d')  # Format the datetime object
-                data = {
-                    "New search": f"('{review[0]}', {formatted_date}, {review[2]}, '{review[3]}', '{review[4]}')"
-                }
-                await websocket.send_json(data)
-                # await send_email(review[0] + " искал " + review[4] + " в " + formatted_date)
-                # await websocket.send_text(review[0]+" искал "+review[4])
-                last_review_id = review[2]
+                today_date = datetime.datetime.now().strftime('%Y-%m-%d')  # Get today's date
+                if formatted_date == today_date:
+                    data = {
+                        "New search": f"('{review[0]}', {formatted_date}, {review[2]}, '{review[3]}', '{review[4]}')"
+                    }
+                    await websocket.send_json(data)
+                    await send_email(review[0] + " искал " + review[4] + " в " + formatted_date)
+                    # await websocket.send_text(review[0]+" искал "+review[4])
+                    last_review_id = review[2]
 
         await asyncio.sleep(10)
 
