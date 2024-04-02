@@ -7,7 +7,7 @@ from sqlalchemy import or_
 
 router = APIRouter()
 
-@router.get("/risks/{request_name}/")
+@router.get("/risks/users_log/")
 async def get_risk_entries(request_name: str,
                           current_user: str = Depends(get_current_user),
                           db: Session = Depends(get_db)):
@@ -19,7 +19,7 @@ async def get_risk_entries(request_name: str,
 
     log_entries_as_dict = [
         dict(
-            date=row[0], username=row[1], iin=row[2], fio=row[3]
+            time=row[0], username=row[1], iin=row[2], fio=row[3]
         )
         for row in log_entries
     ]
@@ -42,7 +42,7 @@ async def get_risk_entries(request_name: str,
 
     log_entries_as_dict = [
         dict(
-            time=row[0], username=row[1], iin=row[2], fio=row[3]
+            date=row[0], username=row[1], iin=row[2], fio=row[3]
         )
         for row in log_entries
     ]
@@ -72,7 +72,7 @@ async def get_risk_cascade_log_entries(value: str,
 
     log_entries_as_dict = [
         dict(
-            date=row[0], username=row[1], iin=row[2], fio=row[3]
+            time=row[0], username=row[1], iin=row[2], fio=row[3]
         )
         for row in log_entries
     ]
