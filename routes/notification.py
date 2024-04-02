@@ -87,7 +87,7 @@ async def check_database_for_changes_alchemy2(websocket: WebSocket, db):
 
         await asyncio.sleep(10)
 # WebSocket endpoint
-@router.websocket("/ws")
+# @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket,
                              db: Session = Depends(get_db)):
     await websocket.accept()
