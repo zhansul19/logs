@@ -9,7 +9,7 @@ load_dotenv()
 SMTP_HOST = os.getenv("smtp_host")
 SMTP_PORT = 25
 
-celery = Celery('tasks', broker='redis://localhost:6379')
+celery = Celery('tasks', broker='redis://127.0.0.1:6379')
 
 
 def get_email_template(message: str):
