@@ -3,6 +3,7 @@ from email.message import EmailMessage
 from celery import Celery
 import os
 from dotenv import load_dotenv
+import ssl
 
 
 load_dotenv()
@@ -31,7 +32,7 @@ def get_email_template(message: str):
 @celery.task
 def send_email_report(username: str):
     email = get_email_template(username)
-    with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT) as server:
+    with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, ssl_version=ssl.PROTOCOL_TLS) as server:
         server.connect(SMTP_HOST, 587)
         server.starttls()
         server.login(os.getenv("smtp_user"), os.getenv("smtp_password"))
