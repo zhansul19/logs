@@ -52,8 +52,8 @@ async def check_database_for_changes_dossie_alchemy(websocket: WebSocket, db):
         iin_to_fio_mapping = {}
         today_date = datetime.datetime.now().strftime('%Y-%m-%d')
 
-        with open('C:/Users/User6/Desktop/logs/log/administration2.csv', 'r', encoding='utf-8') as file:
-            # with open('root/log_new/logs/administration2.csv', 'r', encoding='utf-8-sig') as file:
+        # with open('C:/Users/User6/Desktop/logs/log/administration2.csv', 'r', encoding='utf-8') as file:
+        with open('/root/log_new/logs/administration2.csv', 'r', encoding='utf-8') as file:
             csv_reader = csv.reader(file)
             next(csv_reader)
             for row in csv_reader:
