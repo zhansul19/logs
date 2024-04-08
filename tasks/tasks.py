@@ -9,7 +9,8 @@ load_dotenv()
 SMTP_HOST = os.getenv("smtp_host")
 SMTP_PORT = 25
 
-celery = Celery('tasks', broker='redis://192.168.30.24:6379/0')
+celery = Celery('tasks', broker='redis://127.0.0.1:6379/0')
+celery.conf.broker_connection_retry_on_startup = True
 
 
 def get_email_template(message: str):
@@ -32,5 +33,6 @@ def send_email_report(username: str):
     email = get_email_template(username)
     with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT) as server:
         server.connect(SMTP_HOST, 587)
+        server.starttls()
         server.login(os.getenv("smtp_user"), os.getenv("smtp_password"))
         server.send_message(email)
