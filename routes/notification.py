@@ -17,9 +17,8 @@ active_connections = set()
 load_dotenv()
 
 
-async def check_database_for_changes_alchemy(websocket: WebSocket, db):
+async def check_database_for_changes_alchemy(websocket: WebSocket, db, already_notified_reviews):
     last_review_id = 0
-    already_notified_reviews = set()
     while True:
         log_entries = (db.query(Log.username, Log.date, Log.id, Administration.iin, Administration.fio)
                        .join(Administration, cast(Log.request_body, String).contains(Administration.iin))
@@ -109,10 +108,11 @@ async def websocket_endpoint(websocket: WebSocket,
                              db2: Session = Depends(get_db2)):
     await websocket.accept()
     active_connections.add(websocket)
+    already_notified_reviews = set()
     await websocket.send_json({"message": "Connected to WebSocket"})
     try:
         while True:
-            await check_database_for_changes_alchemy(websocket, db)
+            await check_database_for_changes_alchemy(websocket, db, already_notified_reviews)
             await check_database_for_changes_dossie_alchemy(websocket, db2)
     finally:
         active_connections.remove(websocket)
