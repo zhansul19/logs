@@ -112,9 +112,9 @@ async def get_risk_itab_log_entries(value: str,
 
 
 @router.get("/risks/dossie_log/iin={value}/")
-async def get_log_entries(value: str,
-                          current_user: str = Depends(get_current_user),
-                          db: Session = Depends(get_db2)):
+async def get_risk_entries_dossie(value: str,
+                                  current_user: str = Depends(get_current_user),
+                                  db: Session = Depends(get_db2)):
     # Read the CSV file and extract ИИН values
     iin_values = []
     fioval = []
@@ -149,14 +149,14 @@ async def get_log_entries(value: str,
 
 
 @router.get("/risks/dossie_log/")
-async def get_log_entries(current_user: str = Depends(get_current_user),
-                          db: Session = Depends(get_db2)):
+async def get_risk_entries_all_dossie(current_user: str = Depends(get_current_user),
+                                      db: Session = Depends(get_db2)):
     # Read the CSV file and extract ИИН values
     iin_values = []
-    iin_to_fio_mapping = { }
+    iin_to_fio_mapping = {}
 
     # with open('C:/Users/User6/Desktop/logs/log/administration2.csv', 'r', encoding='utf-8') as file:
-    with open('root/log_new/logs/administration2.csv', 'r', encoding='utf-8-sig') as file:
+    with open('root/log_new/logs/administration2.csv', 'r', encoding='utf-8') as file:
         csv_reader = csv.reader(file)
         next(csv_reader)
         for row in csv_reader:
