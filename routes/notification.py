@@ -34,7 +34,7 @@ async def check_database_for_changes_alchemy(websocket: WebSocket, db):
                         # WebSocket client disconnected, handle it gracefully
                         pass
                     email_date = review[1].strftime('%Y-%m-%d %H:%M')
-                    send_email_report.delay(f"{review[0]} искал {review[3]}-{review[2]} в {email_date}")
+                    send_email_report.delay(f"{review[0]} искал {review[4]}-{review[3]} в {email_date}")
                     last_review_id = review[2]
 
         await asyncio.sleep(10)
