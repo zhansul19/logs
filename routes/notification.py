@@ -19,6 +19,7 @@ load_dotenv()
 
 async def check_database_for_changes_alchemy(websocket: WebSocket, db):
     last_review_id = 0
+    already_notified_reviews = set()
     while True:
         log_entries = (db.query(Log.username, Log.date, Log.id, Administration.iin, Administration.fio)
                        .join(Administration, cast(Log.request_body, String).contains(Administration.iin))
@@ -29,18 +30,19 @@ async def check_database_for_changes_alchemy(websocket: WebSocket, db):
                 formatted_date = review[1].strftime('%Y-%m-%d')  # Format the datetime object
                 today_date = datetime.datetime.now().strftime('%Y-%m-%d')  # Get today's date
                 if formatted_date == today_date:
-                    data = {
-                        "New search": f"('{review[0]}', {formatted_date}, {review[2]}, '{review[3]}', '{review[4]}')"
-                    }
-                    try:
-                        await websocket.send_json(data)  # Send notification to WebSocket clients
-                    except WebSocketDisconnect:
-                        # WebSocket client disconnected, handle it gracefully
-                        pass
-                    email_date = review[1].strftime('%Y-%m-%d %H:%M')
-                    send_email_report.delay(f"{review[0]} искал {review[4]}-{review[3]} в {email_date}")
-                    last_review_id = review[2]
-
+                    if review[2] not in already_notified_reviews:
+                        data = {
+                            "New search": f"('{review[0]}', {formatted_date}, {review[2]}, '{review[3]}', '{review[4]}')"
+                        }
+                        try:
+                            await websocket.send_json(data)  # Send notification to WebSocket clients
+                        except WebSocketDisconnect:
+                            # WebSocket client disconnected, handle it gracefully
+                            pass
+                        email_date = review[1].strftime('%Y-%m-%d %H:%M')
+                        send_email_report.delay(f"{review[0]} искал {review[4]}-{review[3]} в {email_date}")
+                        last_review_id = review[2]
+                        already_notified_reviews.add(review[2])
         await asyncio.sleep(10)
 
 
