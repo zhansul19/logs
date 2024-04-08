@@ -10,7 +10,7 @@ load_dotenv()
 SMTP_HOST = os.getenv("smtp_host")
 SMTP_PORT = 25
 
-celery = Celery('tasks', broker='redis://127.0.0.1:6379/0')
+celery = Celery('tasks', broker='redis://127.0.0.1:6379')
 celery.conf.broker_connection_retry_on_startup = True
 
 
@@ -18,7 +18,7 @@ def get_email_template(message: str):
     email = EmailMessage()
     email['Subject'] = 'Risked searches'
     email['From'] = os.getenv("smtp_user")
-    email['To'] = os.getenv("smtp_user")
+    email['To'] = os.getenv("smtp_consumer")
 
     email.set_content(
         '<div>'
