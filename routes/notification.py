@@ -38,10 +38,28 @@ async def check_database_for_changes_alchemy(websocket: WebSocket, db, already_n
                         except WebSocketDisconnect:
                             # WebSocket client disconnected, handle it gracefully
                             pass
-                        email_date = review[1].strftime('%Y-%m-%d %H:%M')
-                        send_email_report.delay(f"{review[0]} искал {review[4]}-{review[3]} в {email_date}")
                         last_review_id = review[2]
                         already_notified_reviews.add(review[2])
+        await asyncio.sleep(10)
+
+
+async def check_database_startup(db):
+    last_review_id = 0
+    today_date = datetime.datetime.now().strftime('%Y-%m-%d')
+    already_notified_reviews = set()
+    while True:
+        log_entries = (db.query(Log.username, Log.date, Log.id, Administration.iin, Administration.fio)
+                       .join(Administration, cast(Log.request_body, String).contains(Administration.iin))
+                       .filter(func.DATE(Log.date) == today_date)
+                       .filter(Log.id > last_review_id)
+                       .order_by(Log.date.desc()).all())
+        if log_entries:
+            for review in log_entries:
+                if review[2] not in already_notified_reviews:
+                    email_date = review[1].strftime('%Y-%m-%d %H:%M')
+                    send_email_report.delay(f"{review[0]} искал {review[4]}-{review[3]} в {email_date}")
+                    last_review_id = review[2]
+                    already_notified_reviews.add(review[2])
         await asyncio.sleep(10)
 
 

@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from auth import router as auth_router
 from routes.itab import router as itab_router
@@ -6,7 +6,10 @@ from routes.cascade import router as cascade_router
 from routes.download import router as download_router
 from routes.dossie_log import router as dossie_log_router
 from routes.administration import router as admin_router
-from routes.notification import router as ws_router
+from routes.notification import router as ws_router, check_database_startup
+from database import get_db
+from sqlalchemy.orm import Session
+
 
 app = FastAPI()
 
@@ -31,3 +34,8 @@ app.include_router(download_router)
 app.include_router(dossie_log_router)
 app.include_router(admin_router)
 app.include_router(ws_router)
+
+
+@app.on_event("startup")
+async def startup_event(db: Session = Depends(get_db)):
+    check_database_startup(db)
