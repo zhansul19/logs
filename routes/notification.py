@@ -117,8 +117,7 @@ async def websocket_endpoint(websocket: WebSocket,
 
 
 @router.get("/mail")
-async def check_database_startup():
-    db = get_db()
+async def check_database_startup(db: Session = Depends(get_db)):
     last_review_id = 0
     today_date = datetime.datetime.now().strftime('%Y-%m-%d')
     already_notified_reviews = set()
