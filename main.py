@@ -37,5 +37,5 @@ app.include_router(ws_router)
 
 
 @app.on_event("startup")
-async def startup_event(db: Session = Depends(get_db)):
-    check_database_startup.delay(db)
+async def startup_event():
+    check_database_startup.delay()
