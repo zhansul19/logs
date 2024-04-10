@@ -43,8 +43,10 @@ async def check_database_for_changes_alchemy(websocket: WebSocket, db, already_n
                         already_notified_reviews.add(review[2])
         await asyncio.sleep(10)
 
+
 @shared_task
-async def check_database_startup(db):
+async def check_database_startup():
+    db = get_db()
     last_review_id = 0
     today_date = datetime.datetime.now().strftime('%Y-%m-%d')
     already_notified_reviews = set()
