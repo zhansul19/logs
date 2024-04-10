@@ -58,7 +58,7 @@ async def check_database_startup():
             for review in log_entries:
                 if review[2] not in already_notified_reviews:
                     email_date = review[1].strftime('%Y-%m-%d %H:%M')
-                    send_email_report.delay(f"{review[0]} искал {review[4]}-{review[3]} в {email_date}")
+                    send_email_report(f"{review[0]} искал {review[4]}-{review[3]} в {email_date}")
                     last_review_id = review[2]
                     already_notified_reviews.add(review[2])
         await asyncio.sleep(10)
