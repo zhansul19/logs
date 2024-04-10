@@ -33,7 +33,6 @@ def get_email_template(message: str):
     return email
 
 
-@celery.task
 def send_email_report(username: str):
     email = get_email_template(username)
     with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
