@@ -6,9 +6,8 @@ from routes.cascade import router as cascade_router
 from routes.download import router as download_router
 from routes.dossie_log import router as dossie_log_router
 from routes.administration import router as admin_router
-from routes.notification import router as ws_router, check_database_startup
-from database import get_db
-from sqlalchemy.orm import Session
+from routes.notification import router as ws_router
+from tasks.tasks import check_database_startup
 
 
 app = FastAPI()
