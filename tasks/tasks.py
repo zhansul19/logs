@@ -3,7 +3,7 @@ from email.message import EmailMessage
 from celery import Celery
 import os
 from dotenv import load_dotenv
-import routes.notification
+from routes.notification import check_database_startup
 
 
 load_dotenv()
