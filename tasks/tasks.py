@@ -3,7 +3,7 @@ from email.message import EmailMessage
 from celery import Celery
 import os
 from dotenv import load_dotenv
-import ssl
+import routes.notification
 
 
 load_dotenv()
