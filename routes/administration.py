@@ -119,7 +119,7 @@ async def get_risk_entries_dossie(value: str,
     iin_values = []
     fioval = []
     # with open('C:/Users/User6/Desktop/logs/log/administration2.csv', 'r', encoding='utf-8') as file:
-    with open('root/log_new/logs/administration2.csv', 'r', encoding='utf-8') as file:
+    with open('/root/log_new/logs/administration2.csv', 'r', encoding='utf-8') as file:
         csv_reader = csv.DictReader(file)
         next(csv_reader)  # Skip the header row
         for row in csv_reader:
@@ -156,7 +156,7 @@ async def get_risk_entries_all_dossie(current_user: str = Depends(get_current_us
     iin_to_fio_mapping = {}
 
     # with open('C:/Users/User6/Desktop/logs/log/administration2.csv', 'r', encoding='utf-8') as file:
-    with open('root/log_new/logs/administration2.csv', 'r', encoding='utf-8') as file:
+    with open('/root/log_new/logs/administration2.csv', 'r', encoding='utf-8') as file:
         csv_reader = csv.reader(file)
         next(csv_reader)
         for row in csv_reader:
