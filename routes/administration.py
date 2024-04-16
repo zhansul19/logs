@@ -198,8 +198,8 @@ async def get_risk_entries_all_simdata(current_user: str = Depends(get_current_u
     iin_values = []
     iin_to_fio_mapping = {}
 
-    # with open('C:/Users/User6/Desktop/logs/log/administration2.csv', 'r', encoding='utf-8') as file:
-    with open('/root/log_new/logs/administration2.csv', 'r', encoding='utf-8') as file:
+    with open('C:/Users/User6/Desktop/logs/log/administration2.csv', 'r', encoding='utf-8') as file:
+    # with open('/root/log_new/logs/administration2.csv', 'r', encoding='utf-8') as file:
         csv_reader = csv.reader(file)
         next(csv_reader)
         for row in csv_reader:
@@ -235,27 +235,27 @@ async def get_risk_entries_all_simdata(current_user: str = Depends(get_current_u
 
 @router.get("/risks/simdata/iin={value}/")
 async def get_risk_entries_simdata_by_iin(value: str,
-                                   current_user: str = Depends(get_current_user),
-                                   db: Session = Depends(get_db3)):
-    # Read the CSV file and extract ИИН values
+                                          current_user: str = Depends(get_current_user),
+                                          db: Session = Depends(get_db3)):
     iin_values = []
-    fio_values = []
+    iin_to_fio_mapping = {}
 
-    # with open('C:/Users/User6/Desktop/logs/log/administration2.csv', 'r', encoding='utf-8') as file:
-    with open('/root/log_new/logs/administration2.csv', 'r', encoding='utf-8') as file:
-        csv_reader = csv.DictReader(file)
+    with open('C:/Users/User6/Desktop/logs/log/administration2.csv', 'r', encoding='utf-8') as file:
+        # with open('/root/log_new/logs/administration2.csv', 'r', encoding='utf-8') as file:
+        csv_reader = csv.reader(file)
+        next(csv_reader)
         for row in csv_reader:
-            if value in row['ИИН']:
-                iin_values.append(row['ИИН'])
-                fio_values.append(row['ФИО'])
+            iin_values.append(row[3])
+            iin_to_fio_mapping[row[3]] = row[2]
 
-    if not iin_values:
-        raise HTTPException(status_code=404, detail="User's log entries not found")
+    # Constructing multiple like conditions
+    like_conditions = [SimDataLog.member_bin.like(f'%{value}%')]
+    # Combining the like conditions using or_
+    combined_condition = or_(*like_conditions)
 
-    like_conditions = [SimDataLog.member_bin.like(f'%{iin}%') for iin in iin_values]
-
+    # Querying DossieLog entries
     log_entries = db.query(SimDataLog.date_action, SimDataLog.performer, SimDataLog.member_bin,
-                           SimDataLog.member_name).filter(or_(*like_conditions)).all()
+                           SimDataLog.member_name).filter(combined_condition).all()
 
     log_entries_as_dict = [
         dict(
@@ -263,5 +263,14 @@ async def get_risk_entries_simdata_by_iin(value: str,
         )
         for row in log_entries
     ]
+
+    for entry in log_entries_as_dict:
+        for iin, fio in iin_to_fio_mapping.items():
+            if iin in entry["iin"]:
+                entry["fio"] = fio
+                entry["iin"] = iin
+
+    if not log_entries_as_dict:
+        raise HTTPException(status_code=404, detail="User's log entries not found")
 
     return log_entries_as_dict
