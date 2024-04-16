@@ -29,6 +29,7 @@ DATABASE_URL3 = URL.create("postgresql",
                            username=os.getenv("username3"),
                            password=os.getenv("password3"),
                            host=os.getenv("host3"),
+                           port=os.getenv("port3"),
                            database=os.getenv("database3"))
 # DATABASE_URL2=URL.create("postgresql",username="root",password="password",host="localhost",port="5434",database="simple_bank_2")
 engine3 = create_engine(DATABASE_URL3)
