@@ -241,7 +241,8 @@ async def get_risk_entries_simdata_by_iin(value: str,
     iin_values = []
     fio_values = []
 
-    with open('C:/Users/User6/Desktop/logs/log/administration2.csv', 'r', encoding='utf-8') as file:
+    # with open('C:/Users/User6/Desktop/logs/log/administration2.csv', 'r', encoding='utf-8') as file:
+    with open('/root/log_new/logs/administration2.csv', 'r', encoding='utf-8') as file:
         csv_reader = csv.DictReader(file)
         for row in csv_reader:
             if value in row['ИИН']:

@@ -11,6 +11,7 @@ DATABASE_URL = URL.create("postgresql",
                           username=os.getenv("username1"),
                           password=os.getenv("password1"),
                           host=os.getenv("host1"),
+                          # port=os.getenv("port3", "5433"),
                           database=os.getenv("database1"))
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -20,6 +21,7 @@ DATABASE_URL2 = URL.create("postgresql",
                            username=os.getenv("username"),
                            password=os.getenv("password"),
                            host=os.getenv("host"),
+                           # port=os.getenv("port3", "5434"),
                            database=os.getenv("database"))
 # DATABASE_URL2=URL.create("postgresql",username="root",password="password",host="localhost",port="5434",database="simple_bank_2")
 engine2 = create_engine(DATABASE_URL2)
@@ -29,7 +31,7 @@ DATABASE_URL3 = URL.create("postgresql",
                            username=os.getenv("username3"),
                            password=os.getenv("password3"),
                            host=os.getenv("host3"),
-                           port=os.getenv("port3"),
+                           port=os.getenv("port3", "5444"),
                            database=os.getenv("database3"))
 # DATABASE_URL2=URL.create("postgresql",username="root",password="password",host="localhost",port="5434",database="simple_bank_2")
 engine3 = create_engine(DATABASE_URL3)
