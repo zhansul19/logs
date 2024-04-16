@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, Response, Query
 from logger import logging
-from database import UsersLog, Cascade, Log, User, DossieLog, get_db, get_db2
+from database import UsersLog, Cascade, Log, User, DossieLog, SimDataLog, get_db, get_db2, get_db3
 from auth import get_current_user
 from sqlalchemy.orm import Session
 from sqlalchemy import String, cast, func, and_
@@ -320,6 +320,59 @@ async def get_log_fullname_log_entries(lname: str = Query(None),
     ]
     for entry in log_entries_as_dict:
         entry['date'] = entry['date'].strftime('%Y-%m-%d %H:%M:%S')
+    try:
+        df = pd.DataFrame(log_entries_as_dict)
+        excel_filename = "data.xlsx"
+        df.to_excel(excel_filename, index=False)
+        with open(excel_filename, "rb") as file:
+            content = file.read()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to read Excel file: {e}")
+
+    return Response(content, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": "attachment;filename=data.xlsx"})
+
+
+@router.get("/simdata/{tag}={value}/download")
+async def download_excel_dossie_log(tag: str, value: str,
+                                    start_date: datetime = Query(None),
+                                    end_date: datetime = Query(None),
+                                    current_user: str = Depends(get_current_user),
+                                    db: Session = Depends(get_db3)):
+    log_entries = (db.query(SimDataLog.date_action, SimDataLog.action, SimDataLog.member_bin, SimDataLog.member_name,
+                            SimDataLog.performer, SimDataLog.other_attributes))
+    if tag == "username":
+        log_entries = log_entries.filter(SimDataLog.performer == value)
+        logging.info(f"{value}",
+                     extra={'user': current_user, 'table': 'simdata', 'action': 'поиск пользователя по username'})
+    elif tag == "username_partial":
+        log_entries = log_entries.filter(cast(SimDataLog.performer, String).contains(value))
+        logging.info(f"{value}",
+                     extra={'user': current_user, 'table': 'simdata', 'action': 'поиск пользователя по username'})
+    elif tag == "member_name":
+        log_entries = log_entries.filter(cast(SimDataLog.member_name, String).contains(value))
+        logging.info(f"{value}", extra={'user': current_user, 'table': 'simdata', 'action': 'поиск по имени'})
+    elif tag == "member_bin":
+        log_entries = log_entries.filter(cast(SimDataLog.member_bin, String).contains(value))
+        logging.info(f"{value}", extra={'user': current_user, 'table': 'simdata', 'action': 'поиск по иин'})
+
+    # Filter by date range
+    if start_date:
+        log_entries = log_entries.filter(cast(SimDataLog.date_action, String) >= start_date)
+    if end_date:
+        log_entries = log_entries.filter(cast(SimDataLog.date_action, String) <= end_date)
+
+    if start_date or end_date:
+        log_entries = log_entries.order_by(SimDataLog.date_action.asc()).all()
+    else:
+        log_entries = log_entries.order_by(SimDataLog.date_action.desc()).all()
+
+    log_entries_as_dict = [
+        dict(
+            performer=row[4], date=row[0], action=row[1], member_bin=row[2], member_name=row[3], other=row[5]
+        )
+        for row in log_entries
+    ]
     try:
         df = pd.DataFrame(log_entries_as_dict)
         excel_filename = "data.xlsx"

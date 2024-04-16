@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, URL
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, URL, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -25,6 +25,18 @@ DATABASE_URL2 = URL.create("postgresql",
 engine2 = create_engine(DATABASE_URL2)
 SessionLocal2 = sessionmaker(autocommit=False, autoflush=False, bind=engine2)
 
+DATABASE_URL3 = URL.create("postgresql",
+                           username=os.getenv("username3"),
+                           password=os.getenv("password3"),
+                           host=os.getenv("host3"),
+                           database=os.getenv("database3"))
+# DATABASE_URL2=URL.create("postgresql",username="root",password="password",host="localhost",port="5434",database="simple_bank_2")
+engine3 = create_engine(DATABASE_URL3)
+
+with engine3.connect() as connection:
+    connection.execute(text("SET search_path TO simdata,public;"))
+
+SessionLocal3 = sessionmaker(autocommit=False, autoflush=False, bind=engine3)
 
 def get_db():
     db = SessionLocal()
@@ -40,6 +52,27 @@ def get_db2():
         yield db
     finally:
         db.close()
+
+
+def get_db3():
+    db = SessionLocal3()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+class SimDataLog(Base):
+    __tablename__ = "sim_audit_search"
+    __table_args__ = {"schema": "simdata"}
+
+    id = Column(Integer, primary_key=True, index=True)
+    date_action = Column(DateTime)
+    performer = Column(String)
+    action = Column(Integer)
+    member_name = Column(String)
+    member_bin = Column(String)
+    other_attributes = Column(String)
 
 
 class DossieLog(Base):
