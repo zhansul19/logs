@@ -32,5 +32,5 @@ app.include_router(cascade_router)
 app.include_router(download_router)
 app.include_router(dossie_log_router)
 app.include_router(admin_router)
-app.include_router(ws_router)
+# app.include_router(ws_router),
 app.include_router(sim_router)
